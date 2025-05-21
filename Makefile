@@ -1,7 +1,7 @@
 #CXX := clang++
 
 CPPFLAGS= -g -std=c++17
-CPPFLAGS+=-I/usr/include/lilv-0/
+CPPFLAGS+=-I/usr/local/include/lilv-0/
 
 LDFLAGS= -llilv-0
 # liblilv-0 is in /usr/lib/aarch64-linux-gnu/ 
