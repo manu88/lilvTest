@@ -1,16 +1,12 @@
 #CXX := clang++
 
 CPPFLAGS= -g -std=c++17
-#CPPFLAGS+=-I/opt/homebrew/include/ -Isrc/
+CPPFLAGS+=-I/usr/include/lilv-0/
 
-LDFLAGS=
-#-L/opt/homebrew/lib/ -lSDL2 -lSDL2_ttf -lncurses
-LDLIBS=
+LDFLAGS= -llilv-0
+# liblilv-0 is in /usr/lib/aarch64-linux-gnu/ 
 
 SRCS=src/main.cpp
-
-
-
 
 BIN_NAME=testLV2
 OBJS=$(subst .cpp,.o,$(SRCS))
@@ -19,7 +15,7 @@ OBJS=$(subst .cpp,.o,$(SRCS))
 all: $(BIN_NAME) 
 
 $(BIN_NAME): $(OBJS)
-	g++ $(LDFLAGS) -o $(BIN_NAME) $(OBJS) $(LDLIBS)
+	g++ $(OBJS) $(LDFLAGS) -o $(BIN_NAME) 
 
 
 clean:
