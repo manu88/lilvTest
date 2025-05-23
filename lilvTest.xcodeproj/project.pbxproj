@@ -27,6 +27,7 @@
 		59162D1F2DDF6B4000E9D048 /* lilvTest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = lilvTest; sourceTree = BUILT_PRODUCTS_DIR; };
 		59162D2A2DDF6BA700E9D048 /* liblilv-0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "liblilv-0.0.dylib"; path = "../../../../../opt/homebrew/lib/liblilv-0.0.dylib"; sourceTree = "<group>"; };
 		59162D2C2DDF7B6A00E9D048 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		59162D2F2DE0341800E9D048 /* uri.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = uri.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +71,7 @@
 			isa = PBXGroup;
 			children = (
 				59162D2C2DDF7B6A00E9D048 /* main.cpp */,
+				59162D2F2DE0341800E9D048 /* uri.h */,
 			);
 			path = src;
 			sourceTree = "<group>";

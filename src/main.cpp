@@ -1,3 +1,4 @@
+#include "uri.h"
 #include <assert.h>
 #include <lilv/lilv.h>
 #include <lv2/atom/atom.h>
@@ -17,7 +18,7 @@ const LilvPlugin *pluginToTest = nullptr;
 static void printPluginInfos(const LilvPlugin *p) {
   LilvNode *nodeName = lilv_plugin_get_name(p);
   const LilvPluginClass *nodeClass = lilv_plugin_get_class(p);
-  
+
   const LilvNode *nodeClassLabel = lilv_plugin_class_get_label(nodeClass);
   uint32_t numPorts = lilv_plugin_get_num_ports(p);
   printf("plugin '%s' name = '%s' class '%s' ports=%i\n",
@@ -26,7 +27,7 @@ static void printPluginInfos(const LilvPlugin *p) {
          numPorts);
 
   printf("Ports:\n");
-  LilvNode* portConnectionOptional =
+  LilvNode *portConnectionOptional =
       lilv_new_uri(world, LV2_CORE__connectionOptional);
   for (uint32_t i = 0; i < numPorts; i++) {
     const LilvPort *port = lilv_plugin_get_port_by_index(p, i);
@@ -38,7 +39,7 @@ static void printPluginInfos(const LilvPlugin *p) {
     LILV_FOREACH(nodes, pC, portClasses) {
       const LilvNode *portClass = lilv_nodes_get(portClasses, pC);
       const char *portClassName = lilv_node_as_string(portClass);
-      
+
       bool handled = false;
       if (strcmp(portClassName, LV2_ATOM__AtomPort) == 0) {
         isAtom = true;
@@ -67,11 +68,8 @@ static void printPluginInfos(const LilvPlugin *p) {
     printf("\t port %i: %s %s %sname '%s' %s\n", i,
            (isAudio ? "audio" : "control"), (isInput ? "input" : "output"),
            (isAtom ? " (atom) " : ""), lilv_node_as_string(portName),
-           (optional? " Optional": ""));
+           (optional ? " Optional" : ""));
     lilv_node_free(portName);
-
-
-
   }
   if (strcmp(lilv_node_as_string(nodeName), "Example Parameters") == 0) {
     pluginToTest = p;
@@ -96,13 +94,6 @@ static void printPluginInfos(const LilvPlugin *p) {
   lilv_nodes_free(features);
 }
 
-static LV2_URID mapIndex = 0;
-static LV2_URID doMap(LV2_URID_Map_Handle handle, const char *uri) {
-  assert(handle == pluginToTest);
-  printf("doMap called with uri '%s'\n", uri);
-  return mapIndex++;
-}
-
 int main() {
   printf("Test Lilv\n");
   world = lilv_world_new();
@@ -120,9 +111,12 @@ int main() {
     printf("\n\n");
   }
 
+  URITable uri_table;
+  uri_table_init(&uri_table);
+
   LV2_URID_Map mapHandle;
-  mapHandle.map = doMap;
-  mapHandle.handle = (void *)pluginToTest;
+  mapHandle.map = uri_table_map;
+  mapHandle.handle = &uri_table;
   LV2_Feature feat;
   feat.URI = LV2_URID__map;
   feat.data = &mapHandle;
@@ -131,23 +125,24 @@ int main() {
       lilv_plugin_instantiate(pluginToTest, 48000.0, features);
   assert(instance);
 
-  LV2_Atom_Int input[128];
-  LV2_Atom_Int output[128];
-  for (int i=0;i<128;i++){
-    input[i].body = i;
-    output[i].body = 0;
-  }
+  const size_t atom_capacity = 1024;
+  
+  LV2_Atom_Sequence seq_in = {{sizeof(LV2_Atom_Sequence_Body),
+                               uri_table_map(&uri_table, LV2_ATOM__Sequence)},
+                              {0, 0}};
 
+  LV2_Atom_Sequence* seq_out =
+    (LV2_Atom_Sequence*)malloc(sizeof(LV2_Atom_Sequence) + atom_capacity);
   
-  lilv_instance_connect_port(instance, 0, &input);
-  lilv_instance_connect_port(instance, 1, &output);
+  seq_out->atom.size = atom_capacity;
+  seq_out->atom.type = uri_table_map(&uri_table, LV2_ATOM__Chunk);
+  
+
+  lilv_instance_connect_port(instance, 0, &seq_in);
+  lilv_instance_connect_port(instance, 1, seq_out);
   lilv_instance_activate(instance);
-  lilv_instance_run(instance, 1);
-  for (int i=0;i<128;i++){
-    printf("%i: %i\n",i , output[i].body);
-  }
-  
-  
+  lilv_instance_run(instance, 64);
+
   lilv_instance_free(instance);
   lilv_world_free(world);
   return 0;
