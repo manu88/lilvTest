@@ -19,6 +19,7 @@ public:
     ~MainWindow();
 
 private:
+    void populatePluginList();
     Ui::MainWindow *ui;
 
     LV2::Plugin _plugins;

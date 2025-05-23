@@ -7,27 +7,56 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    const auto plugins = LV2::Plugin::manager().enumeratePlugins();
-    for(auto const &p: plugins){
-        qDebug("plugin '%s' '%s'", p.name.toStdString().c_str(), p.uri.toStdString().c_str());
-        qDebug("\tports:");
-        for(int i=0;i <p.ports.size(); i++){
-            qDebug("\t\tport %i '%s' %s %s %s",
-                   i,
-                   p.ports[i].name.toStdString().c_str(),
-                   p.ports[i].type == LV2::Plugin::Description::Port::AUDIO? "audio":"control",
-                   p.ports[i].flow == LV2::Plugin::Description::Port::INPUT? "input":"output",
-                   p.ports[i].optional ? "(optional)":"");
-        }
-
-        qDebug("\tfeatures:");
-        for(auto const &feat: p.features){
-            qDebug("\t\t%s %s", feat.uri.toStdString().c_str(), feat.optional? "optional":"required");
-        }
-    }
+    populatePluginList();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::populatePluginList(){
+    int numCols = 2;
+    ui->treeWidget->setColumnCount(numCols);
+    QStringList columnNames;
+    columnNames << "name" << "uri";
+    ui->treeWidget->setHeaderLabels(QStringList(columnNames));
+
+    QList<QTreeWidgetItem *> items;
+
+    const auto plugins = LV2::Plugin::manager().enumeratePlugins();
+    for(auto const &p: plugins){
+        QTreeWidgetItem* pluginWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList(p.name));
+
+        pluginWidget->setText(1, p.uri);
+
+
+        QTreeWidgetItem* portsWidget = new QTreeWidgetItem();
+        portsWidget->setText(0, "ports");
+        pluginWidget->addChild(portsWidget);
+        for(int i=0;i <p.ports.size(); i++){
+
+            const QString desc = QString::number(i) + " '" + p.ports[i].name + "' " + (LV2::Plugin::Description::Port::AUDIO? "audio":"control")  + " " + (LV2::Plugin::Description::Port::INPUT? "input":"output") + " " + (p.ports[i].optional ? "(optional)":"");
+            QTreeWidgetItem* portWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList(desc));
+            portsWidget->addChild(portWidget);
+        }
+
+        QTreeWidgetItem* featsWidget = new QTreeWidgetItem();
+        featsWidget->setText(0, "features");
+        pluginWidget->addChild(featsWidget);
+
+        for(auto const &feat: p.features){
+            QTreeWidgetItem* featWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList((feat.optional? "optional":"required")));
+            featWidget->setText(1, feat.uri);
+            featsWidget->addChild(featWidget);
+        }
+
+        items.append(pluginWidget);
+    }
+
+    ui->treeWidget->insertTopLevelItems(0, items);
+    for(int i = 0; i < numCols ; i++)
+    {
+        ui->treeWidget->resizeColumnToContents(i);
+    }
 }
