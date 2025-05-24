@@ -49,6 +49,17 @@ void MainWindow::populatePluginList(){
 
             const QString desc = QString::number(i) + " '" + p.ports[i].name + "' " + (LV2::Plugin::Description::Port::AUDIO? "audio":"control")  + " " + (LV2::Plugin::Description::Port::INPUT? "input":"output") + " " + (p.ports[i].optional ? "(optional)":"");
             QTreeWidgetItem* portWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList(desc));
+
+            if (!p.ports[i].scalePoints.empty()){
+                QTreeWidgetItem* scalePointsWidget = new QTreeWidgetItem();
+                scalePointsWidget->setText(0, "scale points");
+                for (auto const &p: p.ports[i].scalePoints){
+                    QString scalePointDesc =p.label + ": " + QString::number(p.value);
+                    QTreeWidgetItem* scalePointWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList(scalePointDesc));
+                    scalePointsWidget->addChild(scalePointWidget);
+                }
+                portWidget->addChild(scalePointsWidget);
+            }
             portsWidget->addChild(portWidget);
         }
 

@@ -19,6 +19,11 @@ public:
         };
 
         struct Port{
+            struct ScalePoint{
+                QString label;
+                float value;
+            };
+
             enum Flow{
                 INPUT,
                 OUTPUT,
@@ -32,6 +37,7 @@ public:
             Flow flow;
             Type type;
             bool optional = false;
+            QVector<ScalePoint> scalePoints;
         };
 
         QString name;

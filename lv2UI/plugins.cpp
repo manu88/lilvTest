@@ -91,6 +91,20 @@ LV2::Plugin::Description LV2::Plugin::Manager::createFromPlugin(const LilvPlugin
         portDesc.flow = isInput? LV2::Plugin::Description::Port::INPUT: LV2::Plugin::Description::Port::OUTPUT;
         portDesc.type = isAudio? LV2::Plugin::Description::Port::AUDIO: LV2::Plugin::Description::Port::CONTROL;
 
+        // scale points
+        LilvScalePoints* scalePoints = lilv_port_get_scale_points(p, port);
+
+        LILV_FOREACH(scale_points, pS, scalePoints) {
+            const LilvScalePoint* scalePoint = lilv_scale_points_get(scalePoints, pS);
+            LV2::Plugin::Description::Port::ScalePoint scalePointDesc;
+
+            scalePointDesc.label = lilv_node_as_string(lilv_scale_point_get_label(scalePoint));
+            const LilvNode* nodeVal = lilv_scale_point_get_value(scalePoint);
+            scalePointDesc.value = lilv_node_as_float(nodeVal);
+            portDesc.scalePoints.append(scalePointDesc);
+        }
+
+        lilv_scale_points_free(scalePoints);
         desc.ports.append(portDesc);
     }
     // features
