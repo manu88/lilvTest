@@ -28,6 +28,7 @@
 		59162D2A2DDF6BA700E9D048 /* liblilv-0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "liblilv-0.0.dylib"; path = "../../../../../opt/homebrew/lib/liblilv-0.0.dylib"; sourceTree = "<group>"; };
 		59162D2C2DDF7B6A00E9D048 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		59162D2F2DE0341800E9D048 /* uri.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = uri.h; sourceTree = "<group>"; };
+		59162D302DE047B400E9D048 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -45,6 +46,7 @@
 		59162D162DDF6B4000E9D048 = {
 			isa = PBXGroup;
 			children = (
+				59162D302DE047B400E9D048 /* Makefile */,
 				59162D2D2DDF7B6A00E9D048 /* src */,
 				59162D292DDF6BA700E9D048 /* Frameworks */,
 				59162D202DDF6B4000E9D048 /* Products */,

@@ -65,7 +65,7 @@ static void printPluginInfos(const LilvPlugin *p) {
       }
     }
     LilvNode *portName = lilv_port_get_name(p, port);
-    printf("\t port %i: %s %s %sname '%s' %s\n", i,
+    printf("\t port %i: %s %s %s name '%s' %s\n", i,
            (isAudio ? "audio" : "control"), (isInput ? "input" : "output"),
            (isAtom ? " (atom) " : ""), lilv_node_as_string(portName),
            (optional ? " Optional" : ""));
@@ -99,8 +99,8 @@ int main() {
   world = lilv_world_new();
 
   LilvNode *lv2_path = lilv_new_string(world, LV2_PATH);
-
   lilv_world_set_option(world, LILV_OPTION_LV2_PATH, lv2_path);
+  lilv_node_free(lv2_path);
   lilv_world_load_all(world);
 
   const LilvPlugins *plugins = lilv_world_get_all_plugins(world);
