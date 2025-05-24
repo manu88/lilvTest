@@ -6,92 +6,77 @@
 #include <QVector>
 
 namespace LV2{
+    namespace Plugin
+    {
+        struct Description{
 
-
-class Plugin
-{
-public:
-
-    struct Description{
-
-        struct UI{
-            QString uri;
-            bool supported;
-        };
-
-        struct Feature{
-            bool optional = false;
-            QString uri;
-        };
-
-        struct Port{
-            struct ScalePoint{
-                QString label;
-                float value;
+            struct UI{
+                QString uri;
+                bool supported;
             };
 
-            enum Flow{
-                INPUT,
-                OUTPUT,
+            struct Feature{
+                bool optional = false;
+                QString uri;
             };
 
-            enum Type{
-                AUDIO,
-                CONTROL,
+            struct Port{
+                struct ScalePoint{
+                    QString label;
+                    float value;
+                };
+
+                enum Flow{
+                    INPUT,
+                    OUTPUT,
+                };
+
+                enum Type{
+                    AUDIO,
+                    CONTROL,
+                };
+                QString name;
+                Flow flow;
+                Type type;
+                bool optional = false;
+                QVector<ScalePoint> scalePoints;
             };
+
             QString name;
-            Flow flow;
-            Type type;
-            bool optional = false;
-            QVector<ScalePoint> scalePoints;
+            QString uri;
+            QString project;
+
+            QVector<Port> ports;
+            QList<Feature> features;
+            QVector<UI> uis;
         };
 
-        QString name;
-        QString uri;
-        QString project;
+        class Manager{
+            friend Manager& manager();
+        public:
+            Manager(Manager const&)         = delete;
+            void operator=(Manager const&)  = delete;
 
-        QVector<Port> ports;
-        QList<Feature> features;
-        QVector<UI> uis;
-    };
+            ~Manager();
 
-    class Manager{
-        friend class Plugin;
-    public:
-        Manager(Manager const&)         = delete;
-        void operator=(Manager const&)  = delete;
+            QList<Description> getPlugins();
+            void refreshPlugins();
 
-        ~Manager();
+        protected:
+            Manager();
 
-        QList<Description> getPlugins();
-        void refreshPlugins();
+        private:
+            LilvWorld *_world = nullptr;
 
-    protected:
-        Manager();
+            Description createFromPlugin(const LilvPlugin *p);
 
-    private:
-        LilvWorld *_world = nullptr;
+            LilvNode *_portConnectionOptionalURI;
+            LilvNode* _hostType;
 
-        Description createFromPlugin(const LilvPlugin *p);
+            QList<Description> _plugins;
+        };
 
-        LilvNode *_portConnectionOptionalURI;
-        LilvNode* _hostType;
-
-        QList<Description> _plugins;
-    };
-
-    static Manager& manager(){
-        static Manager m;
-        return m;
+        Manager& manager();
     }
-
-    Plugin();
-    ~Plugin();
-
-private:
-
-
-};
-
 }
 #endif // PLUGINS_H

@@ -7,6 +7,12 @@
 
 #define LV2_PATH "/opt/homebrew/lib/lv2/"
 
+
+LV2::Plugin::Manager& LV2::Plugin::manager(){
+    static LV2::Plugin::Manager m;
+    return m;
+}
+
 LV2::Plugin::Manager::Manager(){
     qDebug("Init Plugin manager");
     _world = lilv_world_new();
@@ -165,13 +171,4 @@ LV2::Plugin::Description LV2::Plugin::Manager::createFromPlugin(const LilvPlugin
 
 LV2::Plugin::Manager::~Manager(){
     lilv_world_free(_world);
-}
-
-LV2::Plugin::Plugin() {
-
-}
-
-
-LV2::Plugin::~Plugin(){
-
 }

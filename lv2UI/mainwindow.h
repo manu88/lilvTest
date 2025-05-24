@@ -28,7 +28,6 @@ private:
     Ui::MainWindow *ui;
 
     UIHost _uiHost;
-    LV2::Plugin _plugins;
 
 };
 #endif // MAINWINDOW_H
