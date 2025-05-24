@@ -1,18 +1,29 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include <QDebug>
+#include <QPushButton>
+#include <QToolButton>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
+    connect(ui->refreshButton, &QToolButton::clicked, this, &MainWindow::updateListClicked);
+    setWindowTitle("LV2 plugin explorer");
+    //LV2::Plugin::manager().refreshPlugins();
     populatePluginList();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::updateListClicked(){
+    LV2::Plugin::manager().refreshPlugins();
+    populatePluginList();
 }
 
 void MainWindow::populatePluginList(){
@@ -24,7 +35,7 @@ void MainWindow::populatePluginList(){
 
     QList<QTreeWidgetItem *> items;
 
-    const auto plugins = LV2::Plugin::manager().enumeratePlugins();
+    const auto plugins = LV2::Plugin::manager().getPlugins();
     for(auto const &p: plugins){
         QTreeWidgetItem* pluginWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList(p.name));
 
@@ -53,7 +64,7 @@ void MainWindow::populatePluginList(){
 
         items.append(pluginWidget);
     }
-
+    ui->treeWidget->clear();
     ui->treeWidget->insertTopLevelItems(0, items);
     for(int i = 0; i < numCols ; i++)
     {

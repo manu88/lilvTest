@@ -18,6 +18,10 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+
+private slots:
+    void updateListClicked();
+
 private:
     void populatePluginList();
     Ui::MainWindow *ui;

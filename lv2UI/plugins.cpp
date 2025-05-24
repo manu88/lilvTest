@@ -6,7 +6,6 @@
 #define LV2_PATH "/opt/homebrew/lib/lv2/"
 
 LV2::Plugin::Manager::Manager(){
-    qDebug("init LV2::Plugin::Manager");
     _world = lilv_world_new();
 
     LilvNode *lv2Path = lilv_new_string(_world, LV2_PATH);
@@ -17,7 +16,7 @@ LV2::Plugin::Manager::Manager(){
     _portConnectionOptionalURI = lilv_new_uri(_world, LV2_CORE__connectionOptional);
 }
 
-QList<LV2::Plugin::Description> LV2::Plugin::Manager::enumeratePlugins(){
+void LV2::Plugin::Manager::refreshPlugins(){
     const LilvPlugins *plugins = lilv_world_get_all_plugins(_world);
 
     QList<Plugin::Description> list;
@@ -25,8 +24,11 @@ QList<LV2::Plugin::Description> LV2::Plugin::Manager::enumeratePlugins(){
         const LilvPlugin *p = lilv_plugins_get(plugins, i);
         list.append(createFromPlugin(p));
     }
+    _plugins = list;
+}
 
-    return list;
+QList<LV2::Plugin::Description> LV2::Plugin::Manager::getPlugins(){
+    return _plugins;
 }
 
 LV2::Plugin::Description LV2::Plugin::Manager::createFromPlugin(const LilvPlugin *p){

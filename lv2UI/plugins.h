@@ -49,16 +49,20 @@ public:
 
         ~Manager();
 
-        QList<Description> enumeratePlugins();
+        QList<Description> getPlugins();
+        void refreshPlugins();
 
     protected:
         Manager();
+
     private:
         LilvWorld *_world = nullptr;
 
         Description createFromPlugin(const LilvPlugin *p);
 
         LilvNode *_portConnectionOptionalURI;
+
+        QList<Description> _plugins;
     };
 
     static Manager& manager(){
