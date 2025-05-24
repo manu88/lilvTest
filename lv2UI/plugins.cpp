@@ -40,6 +40,9 @@ LV2::Plugin::Description LV2::Plugin::Manager::createFromPlugin(const LilvPlugin
 
     lilv_node_free(nodeName);
 
+    LilvNode *projectNode = lilv_plugin_get_project(p);
+    desc.project = lilv_node_as_string(projectNode);
+    lilv_node_free(projectNode);
 
     // ports
     for (uint32_t i = 0; i < lilv_plugin_get_num_ports(p); i++) {
@@ -50,6 +53,7 @@ LV2::Plugin::Description LV2::Plugin::Manager::createFromPlugin(const LilvPlugin
         LilvNode *portName = lilv_port_get_name(p, port);
         portDesc.name = lilv_node_as_string(portName);
         lilv_node_free(portName);
+
 
         bool isInput = false;
         bool isAudio = false;

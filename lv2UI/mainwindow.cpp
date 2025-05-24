@@ -27,10 +27,10 @@ void MainWindow::updateListClicked(){
 }
 
 void MainWindow::populatePluginList(){
-    int numCols = 2;
+    int numCols = 3;
     ui->treeWidget->setColumnCount(numCols);
     QStringList columnNames;
-    columnNames << "name" << "uri";
+    columnNames << "name" << "uri" << "project";
     ui->treeWidget->setHeaderLabels(QStringList(columnNames));
 
     QList<QTreeWidgetItem *> items;
@@ -40,7 +40,7 @@ void MainWindow::populatePluginList(){
         QTreeWidgetItem* pluginWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList(p.name));
 
         pluginWidget->setText(1, p.uri);
-
+        pluginWidget->setText(2, p.project);
 
         QTreeWidgetItem* portsWidget = new QTreeWidgetItem();
         portsWidget->setText(0, "ports");

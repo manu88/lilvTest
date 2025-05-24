@@ -36,6 +36,7 @@ public:
 
         QString name;
         QString uri;
+        QString project;
 
         QVector<Port> ports;
         QList<Feature> features;
