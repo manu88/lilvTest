@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "plugins.h"
+#include "uihost.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -26,6 +27,8 @@ private:
     void populatePluginList();
     Ui::MainWindow *ui;
 
+    UIHost _uiHost;
     LV2::Plugin _plugins;
+
 };
 #endif // MAINWINDOW_H

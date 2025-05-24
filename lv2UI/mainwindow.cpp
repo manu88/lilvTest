@@ -46,7 +46,6 @@ void MainWindow::populatePluginList(){
         portsWidget->setText(0, "ports");
         pluginWidget->addChild(portsWidget);
         for(int i=0;i <p.ports.size(); i++){
-
             const QString desc = QString::number(i) + " '" + p.ports[i].name + "' " + (LV2::Plugin::Description::Port::AUDIO? "audio":"control")  + " " + (LV2::Plugin::Description::Port::INPUT? "input":"output") + " " + (p.ports[i].optional ? "(optional)":"");
             QTreeWidgetItem* portWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList(desc));
 
@@ -71,6 +70,18 @@ void MainWindow::populatePluginList(){
             QTreeWidgetItem* featWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList((feat.optional? "optional":"required")));
             featWidget->setText(1, feat.uri);
             featsWidget->addChild(featWidget);
+        }
+
+        if (!p.uis.empty()){
+            QTreeWidgetItem* uisWidget = new QTreeWidgetItem();
+            uisWidget->setText(0, "uis");
+            pluginWidget->addChild(uisWidget);
+            for(auto const &ui: p.uis){
+                QTreeWidgetItem* uiWidget = new QTreeWidgetItem();
+                uiWidget->setText(0,ui.supported? "supported":"unsupported");
+                uiWidget->setText(1, ui.uri);
+                uisWidget->addChild(uiWidget);
+            }
         }
 
         items.append(pluginWidget);

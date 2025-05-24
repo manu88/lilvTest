@@ -2,10 +2,13 @@
 #include <QDebug>
 #include <lv2/atom/atom.h>
 #include <lv2/urid/urid.h>
+#include <lv2/ui/ui.h>
+#include <suil/suil.h>
 
 #define LV2_PATH "/opt/homebrew/lib/lv2/"
 
 LV2::Plugin::Manager::Manager(){
+    qDebug("Init Plugin manager");
     _world = lilv_world_new();
 
     LilvNode *lv2Path = lilv_new_string(_world, LV2_PATH);
@@ -14,6 +17,7 @@ LV2::Plugin::Manager::Manager(){
     lilv_world_load_all(_world);
 
     _portConnectionOptionalURI = lilv_new_uri(_world, LV2_CORE__connectionOptional);
+    _hostType = lilv_new_uri(_world, LV2_UI__GtkUI);
 }
 
 void LV2::Plugin::Manager::refreshPlugins(){
@@ -29,6 +33,13 @@ void LV2::Plugin::Manager::refreshPlugins(){
 
 QList<LV2::Plugin::Description> LV2::Plugin::Manager::getPlugins(){
     return _plugins;
+}
+
+
+extern "C"{
+static unsigned test(const char* container_type_uri, const char* ui_type_uri){
+    return 0;
+}
 }
 
 LV2::Plugin::Description LV2::Plugin::Manager::createFromPlugin(const LilvPlugin *p){
@@ -132,6 +143,22 @@ LV2::Plugin::Description LV2::Plugin::Manager::createFromPlugin(const LilvPlugin
     }
     lilv_nodes_free(features);
 
+    LilvUIs* uis = lilv_plugin_get_uis(p);
+    LILV_FOREACH(uis, fu, uis){
+        const LilvUI* ui = lilv_uis_get(uis, fu);
+        const LilvNode* uriNode = lilv_ui_get_uri(ui);
+
+        LV2::Plugin::Description::UI uiDesc;
+        uiDesc.uri = lilv_node_as_string(uriNode);
+
+        const LilvNode* uiType   = NULL;
+        uiDesc.supported = lilv_ui_is_supported(ui, suil_ui_supported,_hostType, &uiType);
+        if (uiDesc.supported  && uiType != NULL){
+            qDebug("supported ui: '%s'", lilv_node_as_string(uiType));
+        }
+        desc.uis.append(uiDesc);
+    }
+    lilv_uis_free(uis);
     return desc;
 }
 

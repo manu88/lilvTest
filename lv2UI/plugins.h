@@ -13,6 +13,12 @@ class Plugin
 public:
 
     struct Description{
+
+        struct UI{
+            QString uri;
+            bool supported;
+        };
+
         struct Feature{
             bool optional = false;
             QString uri;
@@ -46,6 +52,7 @@ public:
 
         QVector<Port> ports;
         QList<Feature> features;
+        QVector<UI> uis;
     };
 
     class Manager{
@@ -68,6 +75,7 @@ public:
         Description createFromPlugin(const LilvPlugin *p);
 
         LilvNode *_portConnectionOptionalURI;
+        LilvNode* _hostType;
 
         QList<Description> _plugins;
     };
