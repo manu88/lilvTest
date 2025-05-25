@@ -1,5 +1,4 @@
-#ifndef UIHOST_H
-#define UIHOST_H
+#pragma once
 
 #include <suil/suil.h>
 #include "plugininstance.h"
@@ -22,4 +21,3 @@ namespace LV2{
         };
     }
 }
-#endif // UIHOST_H

@@ -1,19 +1,22 @@
 #include "uihost.h"
+#include <QDebug>
+#include "pluginManager.h"
 #include <lilv/lilv.h>
 #include <lv2/ui/ui.h>
 #include <serd/serd.h>
-#include <QDebug>
 
-
-static void _SuilPortWriteFunc(SuilController controller, uint32_t port_index, uint32_t buffer_size, uint32_t protocol, void const* buffer);
+static void _SuilPortWriteFunc(SuilController controller,
+                               uint32_t port_index,
+                               uint32_t buffer_size,
+                               uint32_t protocol,
+                               void const *buffer);
 static uint32_t _SuilPortIndexFunc(SuilController controller, const char*    port_symbol);
 static uint32_t _SuilPortSubscribeFunc(SuilController controller, uint32_t port_index, uint32_t protocol, const LV2_Feature* const* features);
 static uint32_t _SuilPortUnsubscribeFunc( SuilController controller, uint32_t port_index, uint32_t protocol, const LV2_Feature* const* features);
 
-
-LV2::Plugin::UIHost::UIHost() {
+LV2::Plugin::UIHost::UIHost()
+{
     qDebug("Init UI host");
-
 
     suil_init(0, NULL, SUIL_ARG_NONE);
 
@@ -23,10 +26,10 @@ LV2::Plugin::UIHost::UIHost() {
                                  _SuilPortUnsubscribeFunc);
 }
 
-LV2::Plugin::UIHost::~UIHost(){
+LV2::Plugin::UIHost::~UIHost()
+{
     suil_host_free(_host);
 }
-
 
 static void _SuilPortWriteFunc(SuilController controller, uint32_t port_index, uint32_t buffer_size, uint32_t protocol, void const* buffer){
 
@@ -44,39 +47,47 @@ static uint32_t _SuilPortUnsubscribeFunc( SuilController controller, uint32_t po
     return 0;
 }
 
-
-bool LV2::Plugin::UIHost::createUIFor(LV2::Plugin::Instance &instance , const LV2::Plugin::Description &desc){
+bool LV2::Plugin::UIHost::createUIFor(LV2::Plugin::Instance &instance,
+                                      const LV2::Plugin::Description &desc)
+{
     qDebug("create UI for instance %s", desc.uri.toStdString().c_str());
 
-    const LilvUI* uiptr = desc.uis[0]._ptr;
+    const LilvUI *uiptr = desc.uis[0]._ptr;
 
-    const LilvNode* binaryURINode =  lilv_ui_get_binary_uri(uiptr);
-    const LilvNode* bundleURINode =  lilv_ui_get_bundle_uri(uiptr);
+    const LilvNode *binaryURINode = lilv_ui_get_binary_uri(uiptr);
+    const LilvNode *bundleURINode = lilv_ui_get_bundle_uri(uiptr);
     assert(lilv_node_is_uri(binaryURINode));
     assert(lilv_node_is_uri(bundleURINode));
 
-
-    const char* binary_uri  = lilv_node_as_uri(binaryURINode);
-    const char* bundle_uri  = lilv_node_as_uri(bundleURINode);
+    const char *binary_uri = lilv_node_as_uri(binaryURINode);
+    const char *bundle_uri = lilv_node_as_uri(bundleURINode);
     qDebug("binaryURI '%s'", binary_uri);
     qDebug("bundleURI '%s'", bundle_uri);
 
-    const char* bundle_path = (const char*) serd_file_uri_parse((const uint8_t*)bundle_uri, NULL);
-    const char* binary_path = (const char*) serd_file_uri_parse((const uint8_t*)binary_uri, NULL);
+    const char *bundle_path = (const char *) serd_file_uri_parse((const uint8_t *) bundle_uri, NULL);
+    const char *binary_path = (const char *) serd_file_uri_parse((const uint8_t *) binary_uri, NULL);
 
-    const char* uiTypeUri = LV2_UI__GtkUI;
-    const char* containerTypeUri = LV2_UI__GtkUI ; //LV2_UI__GtkUI;
+    const char *uiTypeUri = LV2_UI__GtkUI;
+    const char *containerTypeUri = LV2_UI__GtkUI; //LV2_UI__GtkUI;
     qDebug("bundle_path='%s' binary_path='%s'", bundle_path, binary_path);
-    SuilInstance* uiInstance = suil_instance_new(
-        _host,
-        this,
-        containerTypeUri,
-        lilv_node_as_uri(lilv_plugin_get_uri(desc._ptr)),
-        lilv_node_as_uri(lilv_ui_get_uri(uiptr)),
-        uiTypeUri,
-        bundle_path,
-        binary_path,
-        NULL);
 
+    LV2_URID_Map mapHandle;
+    mapHandle.map = LV2::Plugin::Manager::doUriMap;
+    mapHandle.handle = &LV2::Plugin::manager();
+    LV2_Feature feat;
+    feat.URI = LV2_URID__map;
+    feat.data = &mapHandle;
+    LV2_Feature *features[2] = {&feat, NULL};
+
+    SuilInstance *uiInstance = suil_instance_new(_host,
+                                                 this,
+                                                 containerTypeUri,
+                                                 lilv_node_as_uri(lilv_plugin_get_uri(desc._ptr)),
+                                                 lilv_node_as_uri(lilv_ui_get_uri(uiptr)),
+                                                 uiTypeUri,
+                                                 bundle_path,
+                                                 binary_path,
+                                                 features);
+    assert(uiInstance);
     return false;
 }

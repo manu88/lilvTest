@@ -7,7 +7,6 @@
 
 #define LV2_PATH "/opt/homebrew/lib/lv2"
 
-
 LV2::Plugin::Manager& LV2::Plugin::manager(){
     static LV2::Plugin::Manager m;
     return m;
@@ -17,7 +16,8 @@ LV2::Plugin::Manager::~Manager(){
     lilv_world_free(_world);
 }
 
-LV2::Plugin::Manager::Manager(){
+LV2::Plugin::Manager::Manager()
+{
     qDebug("Init Plugin manager");
     _world = lilv_world_new();
 
@@ -170,8 +170,8 @@ LV2::Plugin::Description LV2::Plugin::Manager::createFromPlugin(const LilvPlugin
         if (uiDesc.supported  && uiType != NULL){
             qDebug("supported ui: '%s'", lilv_node_as_string(uiType));
 
-            const LilvNode* binaryURINode =  lilv_ui_get_binary_uri(ui);
-            const LilvNode* bundleURINode =  lilv_ui_get_bundle_uri(ui);
+            const LilvNode *binaryURINode = lilv_ui_get_binary_uri(ui);
+            const LilvNode *bundleURINode = lilv_ui_get_bundle_uri(ui);
             assert(lilv_node_is_uri(binaryURINode));
             assert(lilv_node_is_uri(bundleURINode));
             qDebug("binaryURI '%s'", lilv_node_as_uri(binaryURINode));
@@ -183,17 +183,17 @@ LV2::Plugin::Description LV2::Plugin::Manager::createFromPlugin(const LilvPlugin
     return desc;
 }
 
-
-
-static LV2_URID _uriMap(LV2_URID_Map_Handle handle, const char* uri){
+/*static*/ LV2_URID LV2::Plugin::Manager::doUriMap(LV2_URID_Map_Handle handle, const char *uri)
+{
     return reinterpret_cast<LV2::Plugin::Manager*>(handle)->uriMap(uri);
 }
 
-LV2::Plugin::Instance LV2::Plugin::Manager::instantiate(const LV2::Plugin::Description &desc){
+LV2::Plugin::Instance LV2::Plugin::Manager::instantiate(const LV2::Plugin::Description &desc)
+{
     qDebug("instanciate plugin '%s' '%s'", desc.name.toStdString().c_str(), desc.uri.toStdString().c_str());
 
     LV2_URID_Map mapHandle;
-    mapHandle.map = _uriMap;
+    mapHandle.map = doUriMap;
     mapHandle.handle = this;
     LV2_Feature feat;
     feat.URI = LV2_URID__map;
@@ -208,11 +208,6 @@ LV2::Plugin::Instance LV2::Plugin::Manager::instantiate(const LV2::Plugin::Descr
 }
 
 LV2_URID LV2::Plugin::Manager::uriMap(const char* uri){
-    if(_uriHash.contains(uri)){
-        return _uriHash[uri];
-    }
-    _uriHash[uri] = _hashIndex;
-//    qDebug("create map for '%s': %i", uri, _hashIndex);
-    return _hashIndex++;
+    return _uriMap.map(uri);
 }
 

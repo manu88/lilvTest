@@ -1,8 +1,8 @@
 #include "mainwindow.h"
-#include "./ui_mainwindow.h"
 #include <QDebug>
 #include <QPushButton>
 #include <QToolButton>
+#include "./ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -15,13 +15,13 @@ MainWindow::MainWindow(QWidget *parent)
     LV2::Plugin::manager().refreshPlugins();
     populatePluginList();
 
-    const auto plugins = LV2::Plugin::manager().getPlugins();    
-    const auto pluginDesc = plugins.at(plugins.size()-1);
-    auto instance = LV2::Plugin::manager().instantiate(pluginDesc );
-    if (instance.valid()){
+    const auto plugins = LV2::Plugin::manager().getPlugins();
+    const auto pluginDesc = plugins.at(plugins.size() - 1);
+    auto instance = LV2::Plugin::manager().instantiate(pluginDesc);
+    if (instance.valid()) {
         qDebug("instance OK");
-        _uiHost.createUIFor(instance, pluginDesc );
-    }else{
+        _uiHost.createUIFor(instance, pluginDesc);
+    } else {
         qDebug("instance KO");
     }
 }
@@ -31,12 +31,14 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::updateListClicked(){
+void MainWindow::updateListClicked()
+{
     LV2::Plugin::manager().refreshPlugins();
     populatePluginList();
 }
 
-void MainWindow::populatePluginList(){
+void MainWindow::populatePluginList()
+{
     int numCols = 3;
     ui->treeWidget->setColumnCount(numCols);
     QStringList columnNames;
@@ -46,30 +48,38 @@ void MainWindow::populatePluginList(){
     QList<QTreeWidgetItem *> items;
 
     const auto plugins = LV2::Plugin::manager().getPlugins();
-    for(auto const &p: plugins){
-        QTreeWidgetItem* pluginWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList(p.name));
+    for (auto const &p : plugins) {
+        QTreeWidgetItem *pluginWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr),
+                                                            QStringList(p.name));
 
         pluginWidget->setText(1, p.uri);
         pluginWidget->setText(2, p.project);
 
-        QTreeWidgetItem* bundleWidget = new QTreeWidgetItem();
+        QTreeWidgetItem *bundleWidget = new QTreeWidgetItem();
         bundleWidget->setText(0, "bundle");
         bundleWidget->setText(1, p.bundleUri);
         pluginWidget->addChild(bundleWidget);
 
-        QTreeWidgetItem* portsWidget = new QTreeWidgetItem();
+        QTreeWidgetItem *portsWidget = new QTreeWidgetItem();
         portsWidget->setText(0, "ports");
         pluginWidget->addChild(portsWidget);
-        for(int i=0;i <p.ports.size(); i++){
-            const QString desc = QString::number(i) + " '" + p.ports[i].name + "' " + (LV2::Plugin::Description::Port::AUDIO? "audio":"control")  + " " + (LV2::Plugin::Description::Port::INPUT? "input":"output") + " " + (p.ports[i].optional ? "(optional)":"");
-            QTreeWidgetItem* portWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList(desc));
+        for (int i = 0; i < p.ports.size(); i++) {
+            const QString desc = QString::number(i) + " '" + p.ports[i].name + "' "
+                                 + (LV2::Plugin::Description::Port::AUDIO ? "audio" : "control")
+                                 + " "
+                                 + (LV2::Plugin::Description::Port::INPUT ? "input" : "output")
+                                 + " " + (p.ports[i].optional ? "(optional)" : "");
+            QTreeWidgetItem *portWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr),
+                                                              QStringList(desc));
 
-            if (!p.ports[i].scalePoints.empty()){
-                QTreeWidgetItem* scalePointsWidget = new QTreeWidgetItem();
+            if (!p.ports[i].scalePoints.empty()) {
+                QTreeWidgetItem *scalePointsWidget = new QTreeWidgetItem();
                 scalePointsWidget->setText(0, "scale points");
-                for (auto const &p: p.ports[i].scalePoints){
-                    QString scalePointDesc =p.label + ": " + QString::number(p.value);
-                    QTreeWidgetItem* scalePointWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList(scalePointDesc));
+                for (auto const &p : p.ports[i].scalePoints) {
+                    QString scalePointDesc = p.label + ": " + QString::number(p.value);
+                    QTreeWidgetItem *scalePointWidget
+                        = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr),
+                                              QStringList(scalePointDesc));
                     scalePointsWidget->addChild(scalePointWidget);
                 }
                 portWidget->addChild(scalePointsWidget);
@@ -77,23 +87,26 @@ void MainWindow::populatePluginList(){
             portsWidget->addChild(portWidget);
         }
 
-        QTreeWidgetItem* featsWidget = new QTreeWidgetItem();
+        QTreeWidgetItem *featsWidget = new QTreeWidgetItem();
         featsWidget->setText(0, "features");
         pluginWidget->addChild(featsWidget);
 
-        for(auto const &feat: p.features){
-            QTreeWidgetItem* featWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList((feat.optional? "optional":"required")));
+        for (auto const &feat : p.features) {
+            QTreeWidgetItem *featWidget = new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr),
+                                                              QStringList((feat.optional
+                                                                               ? "optional"
+                                                                               : "required")));
             featWidget->setText(1, feat.uri);
             featsWidget->addChild(featWidget);
         }
 
-        if (!p.uis.empty()){
-            QTreeWidgetItem* uisWidget = new QTreeWidgetItem();
+        if (!p.uis.empty()) {
+            QTreeWidgetItem *uisWidget = new QTreeWidgetItem();
             uisWidget->setText(0, "uis");
             pluginWidget->addChild(uisWidget);
-            for(auto const &ui: p.uis){
-                QTreeWidgetItem* uiWidget = new QTreeWidgetItem();
-                uiWidget->setText(0,ui.supported? "supported":"unsupported");
+            for (auto const &ui : p.uis) {
+                QTreeWidgetItem *uiWidget = new QTreeWidgetItem();
+                uiWidget->setText(0, ui.supported ? "supported" : "unsupported");
                 uiWidget->setText(1, ui.uri);
                 uisWidget->addChild(uiWidget);
             }
@@ -103,8 +116,7 @@ void MainWindow::populatePluginList(){
     }
     ui->treeWidget->clear();
     ui->treeWidget->insertTopLevelItems(0, items);
-    for(int i = 0; i < numCols ; i++)
-    {
+    for (int i = 0; i < numCols; i++) {
         ui->treeWidget->resizeColumnToContents(i);
     }
 }

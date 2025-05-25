@@ -27,6 +27,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         uihost.h uihost.cpp
         plugindescription.h
         plugininstance.h plugininstance.cpp
+        URIMap.h
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET lv2UI APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -48,14 +49,21 @@ endif()
 
 target_link_libraries(lv2UI PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 
+if(APPLE)
 target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/lilv-0/")
 target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/suil-0/")
 target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/serd-0/")
+target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/gtk-2.0")
+target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/glib-2.0/")
 target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/")
+target_include_directories(lv2UI PUBLIC "/opt/homebrew/Cellar/glib/2.84.1/lib/glib-2.0/include")
+endif()
+
 target_link_directories(lv2UI PUBLIC "/opt/homebrew/lib/")
 target_link_libraries(lv2UI PUBLIC lilv-0)
 target_link_libraries(lv2UI PUBLIC suil-0)
 target_link_libraries(lv2UI PUBLIC serd-0)
+target_link_libraries(lv2UI PUBLIC gdk-quartz-2.0)
 
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

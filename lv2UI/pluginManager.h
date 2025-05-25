@@ -1,5 +1,5 @@
-#ifndef PLUGINMANAGER_H
-#define PLUGINMANAGER_H
+#pragma once
+
 #include <QString>
 #include <lilv/lilv.h>
 #include <QList>
@@ -7,6 +7,7 @@
 #include <QVector>
 #include "plugindescription.h"
 #include "plugininstance.h"
+#include "URIMap.h"
 
 namespace LV2{
     namespace Plugin
@@ -26,6 +27,8 @@ namespace LV2{
 
 
             LV2_URID uriMap(const char* uri);
+
+            static LV2_URID doUriMap(LV2_URID_Map_Handle handle, const char* uri);
         protected:
             Manager();
 
@@ -38,11 +41,9 @@ namespace LV2{
             LilvNode* _hostType;
 
             QList<Description> _plugins;
-            LV2_URID _hashIndex;
-            QHash<QString, LV2_URID> _uriHash;
+            URIMap _uriMap;
         };
 
         Manager& manager();
     }
 }
-#endif // PLUGINMANAGER_H
