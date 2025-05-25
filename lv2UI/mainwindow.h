@@ -27,7 +27,7 @@ private:
     void populatePluginList();
     Ui::MainWindow *ui;
 
-    UIHost _uiHost;
+    LV2::Plugin::UIHost _uiHost;
 
 };
 #endif // MAINWINDOW_H

@@ -5,12 +5,16 @@
 #include <lv2/ui/ui.h>
 #include <suil/suil.h>
 
-#define LV2_PATH "/opt/homebrew/lib/lv2/"
+#define LV2_PATH "/opt/homebrew/lib/lv2"
 
 
 LV2::Plugin::Manager& LV2::Plugin::manager(){
     static LV2::Plugin::Manager m;
     return m;
+}
+
+LV2::Plugin::Manager::~Manager(){
+    lilv_world_free(_world);
 }
 
 LV2::Plugin::Manager::Manager(){
@@ -32,7 +36,9 @@ void LV2::Plugin::Manager::refreshPlugins(){
     QList<Plugin::Description> list;
     LILV_FOREACH(plugins, i, plugins) {
         const LilvPlugin *p = lilv_plugins_get(plugins, i);
-        list.append(createFromPlugin(p));
+        auto desc = createFromPlugin(p);
+        desc._ptr = p;
+        list.append(desc);
     }
     _plugins = list;
 }
@@ -54,7 +60,7 @@ LV2::Plugin::Description LV2::Plugin::Manager::createFromPlugin(const LilvPlugin
 
     desc.name = lilv_node_as_string(nodeName);
     desc.uri = lilv_node_as_string(lilv_plugin_get_uri(p));
-
+    desc.bundleUri = lilv_node_as_string(lilv_plugin_get_bundle_uri(p));
     lilv_node_free(nodeName);
 
     LilvNode *projectNode = lilv_plugin_get_project(p);
@@ -155,20 +161,58 @@ LV2::Plugin::Description LV2::Plugin::Manager::createFromPlugin(const LilvPlugin
         const LilvNode* uriNode = lilv_ui_get_uri(ui);
 
         LV2::Plugin::Description::UI uiDesc;
+        uiDesc._ptr = ui;
+        uiDesc._uriNode = uriNode;
         uiDesc.uri = lilv_node_as_string(uriNode);
 
         const LilvNode* uiType   = NULL;
         uiDesc.supported = lilv_ui_is_supported(ui, suil_ui_supported,_hostType, &uiType);
         if (uiDesc.supported  && uiType != NULL){
             qDebug("supported ui: '%s'", lilv_node_as_string(uiType));
+
+            const LilvNode* binaryURINode =  lilv_ui_get_binary_uri(ui);
+            const LilvNode* bundleURINode =  lilv_ui_get_bundle_uri(ui);
+            assert(lilv_node_is_uri(binaryURINode));
+            assert(lilv_node_is_uri(bundleURINode));
+            qDebug("binaryURI '%s'", lilv_node_as_uri(binaryURINode));
+            qDebug("bundleURI '%s'", lilv_node_as_uri(bundleURINode));
         }
         desc.uis.append(uiDesc);
     }
-    lilv_uis_free(uis);
+    //lilv_uis_free(uis);
     return desc;
 }
 
 
-LV2::Plugin::Manager::~Manager(){
-    lilv_world_free(_world);
+
+static LV2_URID _uriMap(LV2_URID_Map_Handle handle, const char* uri){
+    return reinterpret_cast<LV2::Plugin::Manager*>(handle)->uriMap(uri);
 }
+
+LV2::Plugin::Instance LV2::Plugin::Manager::instantiate(const LV2::Plugin::Description &desc){
+    qDebug("instanciate plugin '%s' '%s'", desc.name.toStdString().c_str(), desc.uri.toStdString().c_str());
+
+    LV2_URID_Map mapHandle;
+    mapHandle.map = _uriMap;
+    mapHandle.handle = this;
+    LV2_Feature feat;
+    feat.URI = LV2_URID__map;
+    feat.data = &mapHandle;
+    LV2_Feature *features[2] = {&feat, NULL};
+    LilvInstance *instance =
+        lilv_plugin_instantiate(desc._ptr, 48000.0, features);
+
+    LV2::Plugin::Instance ret;
+    ret._instance = instance;
+    return ret;
+}
+
+LV2_URID LV2::Plugin::Manager::uriMap(const char* uri){
+    if(_uriHash.contains(uri)){
+        return _uriHash[uri];
+    }
+    _uriHash[uri] = _hashIndex;
+//    qDebug("create map for '%s': %i", uri, _hashIndex);
+    return _hashIndex++;
+}
+

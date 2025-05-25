@@ -12,8 +12,18 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->refreshButton, &QToolButton::clicked, this, &MainWindow::updateListClicked);
     setWindowTitle("LV2 plugin explorer");
-    //LV2::Plugin::manager().refreshPlugins();
+    LV2::Plugin::manager().refreshPlugins();
     populatePluginList();
+
+    const auto plugins = LV2::Plugin::manager().getPlugins();    
+    const auto pluginDesc = plugins.at(plugins.size()-1);
+    auto instance = LV2::Plugin::manager().instantiate(pluginDesc );
+    if (instance.valid()){
+        qDebug("instance OK");
+        _uiHost.createUIFor(instance, pluginDesc );
+    }else{
+        qDebug("instance KO");
+    }
 }
 
 MainWindow::~MainWindow()
@@ -41,6 +51,11 @@ void MainWindow::populatePluginList(){
 
         pluginWidget->setText(1, p.uri);
         pluginWidget->setText(2, p.project);
+
+        QTreeWidgetItem* bundleWidget = new QTreeWidgetItem();
+        bundleWidget->setText(0, "bundle");
+        bundleWidget->setText(1, p.bundleUri);
+        pluginWidget->addChild(bundleWidget);
 
         QTreeWidgetItem* portsWidget = new QTreeWidgetItem();
         portsWidget->setText(0, "ports");

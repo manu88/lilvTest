@@ -3,8 +3,10 @@
 #include <QString>
 #include <lilv/lilv.h>
 #include <QList>
+#include <QHash>
 #include <QVector>
 #include "plugindescription.h"
+#include "plugininstance.h"
 
 namespace LV2{
     namespace Plugin
@@ -20,18 +22,24 @@ namespace LV2{
             QList<Description> getPlugins();
             void refreshPlugins();
 
+            Instance instantiate(const Description &desc);
+
+
+            LV2_URID uriMap(const char* uri);
         protected:
             Manager();
 
         private:
-            LilvWorld *_world = nullptr;
 
             Description createFromPlugin(const LilvPlugin *p);
 
+            LilvWorld *_world = nullptr;
             LilvNode *_portConnectionOptionalURI;
             LilvNode* _hostType;
 
             QList<Description> _plugins;
+            LV2_URID _hashIndex;
+            QHash<QString, LV2_URID> _uriHash;
         };
 
         Manager& manager();
