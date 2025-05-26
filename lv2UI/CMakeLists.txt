@@ -61,26 +61,13 @@ elseif(LINUX)
   target_include_directories(lv2UI PUBLIC "/usr/local/include/lilv-0/")
   target_include_directories(lv2UI PUBLIC "/usr/include/suil-0/")
   target_include_directories(lv2UI PUBLIC "/usr/include/serd-0/")
-  target_include_directories(lv2UI PUBLIC "/usr/include/gtk-2.0/")
-  target_include_directories(lv2UI PUBLIC "/usr/include/glib-2.0/")
-  target_include_directories(lv2UI PUBLIC "//usr/lib/aarch64-linux-gnu/glib-2.0/include/") #glibconfig.h
-  target_include_directories(lv2UI PUBLIC "/usr/include/cairo/")
-  target_include_directories(lv2UI PUBLIC "/usr/include/pango-1.0/")
-  target_include_directories(lv2UI PUBLIC "/usr/include/harfbuzz/")
-  target_include_directories(lv2UI PUBLIC "/usr/lib/aarch64-linux-gnu/gtk-2.0/include/") #gdkconfig.h
-  target_include_directories(lv2UI PUBLIC "/usr/include/gdk-pixbuf-2.0")
-  target_include_directories(lv2UI PUBLIC "/usr/include/atk-1.0/")
 
-  target_link_directories(lv2UI PUBLIC "//usr/lib/aarch64-linux-gnu/")
-  target_link_libraries(lv2UI PUBLIC gobject-2.0)
 endif()
 
 
 target_link_libraries(lv2UI PUBLIC lilv-0)
 target_link_libraries(lv2UI PUBLIC suil-0)
 target_link_libraries(lv2UI PUBLIC serd-0)
-#target_link_libraries(lv2UI PUBLIC gdk-x11-2.0)
-#target_link_libraries(lv2UI PUBLIC gtk-x11-2.0)
 
 
 
