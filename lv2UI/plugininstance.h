@@ -9,9 +9,10 @@ namespace LV2{
         public:
             Instance();
 
-            bool valid()const{
-                return _instance != nullptr;
-            }
+            bool isValid() const { return _instance != nullptr; }
+
+            void activate();
+            void deactivate();
 
             LilvInstance *_instance;
         };

@@ -211,3 +211,7 @@ LV2_URID LV2::Plugin::Manager::uriMap(const char* uri){
     return _uriMap.map(uri);
 }
 
+const char *LV2::Plugin::Manager::uriUnmap(LV2_URID val)
+{
+    return _uriMap.unMap(val);
+}

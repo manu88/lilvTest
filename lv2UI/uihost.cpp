@@ -1,5 +1,7 @@
 #include "uihost.h"
 #include <QDebug>
+#include <QWindow>
+#include "NativeWinAdapter.h"
 #include "pluginManager.h"
 #include <lilv/lilv.h>
 #include <lv2/ui/ui.h>
@@ -14,6 +16,11 @@ static uint32_t _SuilPortIndexFunc(SuilController controller, const char*    por
 static uint32_t _SuilPortSubscribeFunc(SuilController controller, uint32_t port_index, uint32_t protocol, const LV2_Feature* const* features);
 static uint32_t _SuilPortUnsubscribeFunc( SuilController controller, uint32_t port_index, uint32_t protocol, const LV2_Feature* const* features);
 
+static void _SuilTouchFunc(SuilController controller, uint32_t port_index, bool grabbed)
+{
+    qDebug("_SuilTouchFunc");
+}
+
 LV2::Plugin::UIHost::UIHost()
 {
     qDebug("Init UI host");
@@ -24,6 +31,8 @@ LV2::Plugin::UIHost::UIHost()
                                  _SuilPortIndexFunc,
                                  _SuilPortSubscribeFunc,
                                  _SuilPortUnsubscribeFunc);
+
+    suil_host_set_touch_func(_host, _SuilTouchFunc);
 }
 
 LV2::Plugin::UIHost::~UIHost()
@@ -32,7 +41,8 @@ LV2::Plugin::UIHost::~UIHost()
 }
 
 static void _SuilPortWriteFunc(SuilController controller, uint32_t port_index, uint32_t buffer_size, uint32_t protocol, void const* buffer){
-
+    const char *protocolURI = LV2::Plugin::manager().uriUnmap(protocol);
+    qDebug("_SuilPortWriteFunc call on port %u protocol %u '%s'", port_index, protocol, protocolURI);
 }
 
 static uint32_t _SuilPortIndexFunc( SuilController controller, const char*    port_symbol){
@@ -47,8 +57,8 @@ static uint32_t _SuilPortUnsubscribeFunc( SuilController controller, uint32_t po
     return 0;
 }
 
-bool LV2::Plugin::UIHost::createUIFor(LV2::Plugin::Instance &instance,
-                                      const LV2::Plugin::Description &desc)
+LV2::Plugin::UIInstance LV2::Plugin::UIHost::createUIFor(LV2::Plugin::Instance &instance,
+                                                         const LV2::Plugin::Description &desc)
 {
     qDebug("create UI for instance %s", desc.uri.toStdString().c_str());
 
@@ -88,6 +98,13 @@ bool LV2::Plugin::UIHost::createUIFor(LV2::Plugin::Instance &instance,
                                                  bundle_path,
                                                  binary_path,
                                                  features);
-    assert(uiInstance);
-    return false;
+    LV2::Plugin::UIInstance ret;
+    if (uiInstance) {
+        ret._uiInstance = uiInstance;
+        SuilWidget widget = suil_instance_get_widget(uiInstance);
+        auto nativeWin = createCalendarWindow();
+        qDebug("native win size %i %i", nativeWin.minimumWidth, nativeWin.minimumHeight);
+        ret.winHandle = nativeWin.windowID;
+    }
+    return ret;
 }

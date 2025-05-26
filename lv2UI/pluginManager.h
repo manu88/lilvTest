@@ -27,6 +27,7 @@ namespace LV2{
 
 
             LV2_URID uriMap(const char* uri);
+            const char *uriUnmap(LV2_URID val);
 
             static LV2_URID doUriMap(LV2_URID_Map_Handle handle, const char* uri);
         protected:

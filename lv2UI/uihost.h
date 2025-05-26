@@ -8,16 +8,24 @@
 namespace LV2{
     namespace Plugin
     {
-        class UIHost
-        {
-        public:
-            UIHost();
-            ~UIHost();
+    struct UIInstance
+    {
+        bool isValid() const { return _uiInstance; }
+        SuilInstance *_uiInstance = nullptr;
 
-            bool createUIFor(LV2::Plugin::Instance &instance, const LV2::Plugin::Description &desc);
+        void *winHandle = nullptr;
+    };
+    class UIHost
+    {
+    public:
+        UIHost();
+        ~UIHost();
 
-        private:
-            SuilHost* _host;
-        };
+        UIInstance createUIFor(LV2::Plugin::Instance &instance,
+                               const LV2::Plugin::Description &desc);
+
+    private:
+        SuilHost *_host;
+    };
     }
 }
