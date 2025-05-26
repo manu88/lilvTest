@@ -32,7 +32,7 @@ LV2::Plugin::Manager::Manager()
     lilv_world_load_all(_world);
 
     _portConnectionOptionalURI = lilv_new_uri(_world, LV2_CORE__connectionOptional);
-    _hostType = lilv_new_uri(_world, LV2_UI__GtkUI);
+    _hostType = lilv_new_uri(_world, LV2_UI__Qt6UI);
 }
 
 void LV2::Plugin::Manager::refreshPlugins(){
@@ -170,14 +170,25 @@ LV2::Plugin::Description LV2::Plugin::Manager::createFromPlugin(const LilvPlugin
         uiDesc._uriNode = uriNode;
         uiDesc.uri = lilv_node_as_string(uriNode);
 
-        const LilvNode* uiType   = NULL;
-        uiDesc.supported = lilv_ui_is_supported(ui, suil_ui_supported,_hostType, &uiType);
-        if (uiDesc.supported  && uiType != NULL){
-            const LilvNode *binaryURINode = lilv_ui_get_binary_uri(ui);
-            const LilvNode *bundleURINode = lilv_ui_get_bundle_uri(ui);
-            assert(lilv_node_is_uri(binaryURINode));
-            assert(lilv_node_is_uri(bundleURINode));
+        const LilvNodes *classes = lilv_ui_get_classes(ui);
+
+        LILV_FOREACH(nodes, c, classes)
+        {
+            const LilvNode *type = lilv_nodes_get(classes, c);
+            const char *uiTypeURI = lilv_node_as_uri(type);
+            uiDesc.nativeUIType = uiTypeURI;
         }
+#if 0
+        const LilvNode* uiType   = NULL;
+        unsigned supportScore = lilv_ui_is_supported(ui, suil_ui_supported, _hostType, &uiType);
+        if (supportScore && uiType != NULL) {
+            uiDesc.supportedUIBackends.append(lilv_node_as_string(uiType));
+            //const LilvNode *binaryURINode = lilv_ui_get_binary_uri(ui);
+            //const LilvNode *bundleURINode = lilv_ui_get_bundle_uri(ui);
+            //assert(lilv_node_is_uri(binaryURINode));
+            //assert(lilv_node_is_uri(bundleURINode));
+        }
+#endif
         desc.uis.append(uiDesc);
     }
     //lilv_uis_free(uis);

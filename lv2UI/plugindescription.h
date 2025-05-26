@@ -13,7 +13,8 @@ namespace LV2{
                 friend class Manager;
                 friend class UIHost;
                 QString uri;
-                bool supported;
+                QString nativeUIType;
+
             private:
                 const LilvUI* _ptr;
                 const LilvNode* _uriNode;

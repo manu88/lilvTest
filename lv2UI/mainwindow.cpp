@@ -98,7 +98,7 @@ void MainWindow::populatePluginList()
             pluginWidget->addChild(uisWidget);
             for (auto const &ui : p.uis) {
                 QTreeWidgetItem *uiWidget = new QTreeWidgetItem();
-                uiWidget->setText(0, ui.supported ? "supported" : "unsupported");
+                uiWidget->setText(0, ui.nativeUIType);
                 uiWidget->setText(1, ui.uri);
                 uisWidget->addChild(uiWidget);
             }
