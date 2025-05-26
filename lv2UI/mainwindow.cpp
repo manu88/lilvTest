@@ -36,10 +36,12 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
 #endif
+#if 0
     auto winId = (WId) createCalendarWindow().windowID;
     auto *win = QWindow::fromWinId(winId);
     win->resize(QSize(400, 400));
     win->showNormal();
+#endif
 }
 
 MainWindow::~MainWindow()

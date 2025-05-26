@@ -7,6 +7,7 @@
 
 NativeWindow getNativeWindowID(SuilWidget widget)
 {
+#if 0
     GtkWidget *window = (GtkWidget *) widget;
     //gtk_widget_show(window);
 
@@ -18,23 +19,31 @@ NativeWindow getNativeWindowID(SuilWidget widget)
     auto *win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
     gtk_widget_show_all(win);
-    void *nativeID = GDK_WINDOWING_QUARTZ(win);
 
-    return {
+    uint32_t nativeID = 0;// GDK_WINDOWING_X11(win);
+
+#ifdef Q_OS_MACOS
+    void *nativeID = GDK_WINDOWING_QUARTZ(win);
+#endif
+    return NativeWindow{
         .windowID = nativeID,
         .minimumWidth = minimumSize.width,
         .minimumHeight = minimumSize.height,
     };
+#else
+    return NativeWindow();
+#endif
 }
 
 NativeWindow createCalendarWindow()
 {
+#if 0
     static bool initializedGTK = [] {
         putenv("GDK_BACKEND=x11");
         return gtk_init_check(nullptr, nullptr);
     }();
     assert(initializedGTK);
-    auto *plug = gtk_plug_new(0);
+    GtkWidget *plug = gtk_plug_new(0);
 
     auto *button_box = gtk_button_new_with_label("hello");
     gtk_container_add(GTK_CONTAINER(plug), button_box);
@@ -42,10 +51,13 @@ NativeWindow createCalendarWindow()
     gtk_widget_show_all(plug);
 
     GtkRequisition minimumSize;
-
-    return {
-        .windowID = gtk_plug_get_id(GTK_PLUG(plug)),
+    uint32_t p = gtk_plug_get_id(GTK_PLUG(plug));
+    return NativeWindow{
+        .windowID = p,
         .minimumWidth = minimumSize.width,
         .minimumHeight = minimumSize.height,
     };
+#else
+    return NativeWindow();
+#endif
 }

@@ -7,8 +7,8 @@ extern "C" void gtk_init(int *argc, char ***argv);
 
 int main(int argc, char *argv[])
 {
-    gtk_init(0, NULL);
-    gdk_init(0, NULL);
+    //gtk_init(0, NULL);
+    //gdk_init(0, NULL);
 
     QApplication a(argc, argv);
     MainWindow w;

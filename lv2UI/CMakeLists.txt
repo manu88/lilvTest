@@ -51,29 +51,52 @@ endif()
 target_link_libraries(lv2UI PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 
 if(APPLE)
-target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/lilv-0/")
-target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/suil-0/")
-target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/serd-0/")
-target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/gtk-2.0")
-target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/gdk-2.0")
-target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/glib-2.0/")
-target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/")
-target_include_directories(lv2UI PUBLIC "/opt/homebrew/Cellar/glib/2.84.1/lib/glib-2.0/include")
-target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/cairo/")
-target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/pango-1.0/")
-target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/harfbuzz/")
-target_include_directories(lv2UI PUBLIC "/opt/homebrew/lib/gtk-2.0/include/") # gdkconfig.h
-target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/gdk-pixbuf-2.0/")
-target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/atk-1.0/")
+  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/lilv-0/")
+  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/suil-0/")
+  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/serd-0/")
+  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/gtk-2.0")
+  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/gdk-2.0")
+  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/glib-2.0/")
+  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/")
+  target_include_directories(lv2UI PUBLIC "/opt/homebrew/Cellar/glib/2.84.1/lib/glib-2.0/include")
+  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/cairo/")
+  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/pango-1.0/")
+  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/harfbuzz/")
+  target_include_directories(lv2UI PUBLIC "/opt/homebrew/lib/gtk-2.0/include/") # gdkconfig.h
+  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/gdk-pixbuf-2.0/")
+  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/atk-1.0/")
+
+  target_link_directories(lv2UI PUBLIC "/opt/homebrew/lib/")
+
+  target_link_libraries(lv2UI PUBLIC gdk-quartz-2.0)
+  target_link_libraries(lv2UI PUBLIC gtk-quartz-2.0)
+  target_link_libraries(lv2UI PUBLIC gobject-2.0.0)
+
+elseif(LINUX)
+  target_include_directories(lv2UI PUBLIC "/usr/local/include/lilv-0/")
+  target_include_directories(lv2UI PUBLIC "/usr/include/suil-0/")
+  target_include_directories(lv2UI PUBLIC "/usr/include/serd-0/")
+  target_include_directories(lv2UI PUBLIC "/usr/include/gtk-2.0/")
+  target_include_directories(lv2UI PUBLIC "/usr/include/glib-2.0/")
+  target_include_directories(lv2UI PUBLIC "//usr/lib/aarch64-linux-gnu/glib-2.0/include/") #glibconfig.h
+  target_include_directories(lv2UI PUBLIC "/usr/include/cairo/")
+  target_include_directories(lv2UI PUBLIC "/usr/include/pango-1.0/")
+  target_include_directories(lv2UI PUBLIC "/usr/include/harfbuzz/")
+  target_include_directories(lv2UI PUBLIC "/usr/lib/aarch64-linux-gnu/gtk-2.0/include/") #gdkconfig.h
+  target_include_directories(lv2UI PUBLIC "/usr/include/gdk-pixbuf-2.0")
+  target_include_directories(lv2UI PUBLIC "/usr/include/atk-1.0/")
+
+  target_link_directories(lv2UI PUBLIC "//usr/lib/aarch64-linux-gnu/")
+  target_link_libraries(lv2UI PUBLIC gobject-2.0)
 endif()
 
-target_link_directories(lv2UI PUBLIC "/opt/homebrew/lib/")
+
 target_link_libraries(lv2UI PUBLIC lilv-0)
 target_link_libraries(lv2UI PUBLIC suil-0)
 target_link_libraries(lv2UI PUBLIC serd-0)
-target_link_libraries(lv2UI PUBLIC gdk-quartz-2.0)
-target_link_libraries(lv2UI PUBLIC gtk-quartz-2.0)
-target_link_libraries(lv2UI PUBLIC gobject-2.0.0)
+#target_link_libraries(lv2UI PUBLIC gdk-x11-2.0)
+#target_link_libraries(lv2UI PUBLIC gtk-x11-2.0)
+
 
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

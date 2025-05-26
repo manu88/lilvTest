@@ -1,12 +1,12 @@
 #pragma once
-
+#include <stdint.h>
 //forward from suil
 /// Opaque pointer to a UI widget
 typedef void *SuilWidget;
 
 struct NativeWindow
 {
-    void *windowID;
+    uint32_t windowID;
     int minimumWidth;
     int minimumHeight;
 };

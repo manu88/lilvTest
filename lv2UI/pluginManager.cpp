@@ -5,8 +5,13 @@
 #include <lv2/ui/ui.h>
 #include <suil/suil.h>
 
-#define LV2_PATH "/opt/homebrew/lib/lv2"
-
+#ifdef Q_OS_LINUX
+    #define LV2_PATH "/usr/local/lib/aarch64-linux-gnu/lv2"
+#elif defined(Q_OS_MACOS)
+    #define LV2_PATH "/opt/homebrew/lib/lv2"
+#else
+    #error "unknown platform"
+#endif
 LV2::Plugin::Manager& LV2::Plugin::manager(){
     static LV2::Plugin::Manager m;
     return m;

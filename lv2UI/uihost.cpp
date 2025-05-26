@@ -104,7 +104,7 @@ LV2::Plugin::UIInstance LV2::Plugin::UIHost::createUIFor(LV2::Plugin::Instance &
         SuilWidget widget = suil_instance_get_widget(uiInstance);
         auto nativeWin = createCalendarWindow();
         qDebug("native win size %i %i", nativeWin.minimumWidth, nativeWin.minimumHeight);
-        ret.winHandle = nativeWin.windowID;
+        //ret.winHandle = nativeWin.windowID;
     }
     return ret;
 }
