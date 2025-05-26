@@ -173,14 +173,10 @@ LV2::Plugin::Description LV2::Plugin::Manager::createFromPlugin(const LilvPlugin
         const LilvNode* uiType   = NULL;
         uiDesc.supported = lilv_ui_is_supported(ui, suil_ui_supported,_hostType, &uiType);
         if (uiDesc.supported  && uiType != NULL){
-            qDebug("supported ui: '%s'", lilv_node_as_string(uiType));
-
             const LilvNode *binaryURINode = lilv_ui_get_binary_uri(ui);
             const LilvNode *bundleURINode = lilv_ui_get_bundle_uri(ui);
             assert(lilv_node_is_uri(binaryURINode));
             assert(lilv_node_is_uri(bundleURINode));
-            qDebug("binaryURI '%s'", lilv_node_as_uri(binaryURINode));
-            qDebug("bundleURI '%s'", lilv_node_as_uri(bundleURINode));
         }
         desc.uis.append(uiDesc);
     }

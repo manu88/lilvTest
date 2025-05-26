@@ -24,11 +24,11 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         pluginManager.h pluginManager.cpp
-        uihost.h uihost.cpp
+
         plugindescription.h
         plugininstance.h plugininstance.cpp
         URIMap.h
-        NativeWinAdapter.h NativeWinAdapter.cpp
+
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET lv2UI APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -54,24 +54,9 @@ if(APPLE)
   target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/lilv-0/")
   target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/suil-0/")
   target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/serd-0/")
-  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/gtk-2.0")
-  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/gdk-2.0")
-  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/glib-2.0/")
   target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/")
-  target_include_directories(lv2UI PUBLIC "/opt/homebrew/Cellar/glib/2.84.1/lib/glib-2.0/include")
-  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/cairo/")
-  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/pango-1.0/")
-  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/harfbuzz/")
-  target_include_directories(lv2UI PUBLIC "/opt/homebrew/lib/gtk-2.0/include/") # gdkconfig.h
-  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/gdk-pixbuf-2.0/")
-  target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/atk-1.0/")
 
   target_link_directories(lv2UI PUBLIC "/opt/homebrew/lib/")
-
-  target_link_libraries(lv2UI PUBLIC gdk-quartz-2.0)
-  target_link_libraries(lv2UI PUBLIC gtk-quartz-2.0)
-  target_link_libraries(lv2UI PUBLIC gobject-2.0.0)
-
 elseif(LINUX)
   target_include_directories(lv2UI PUBLIC "/usr/local/include/lilv-0/")
   target_include_directories(lv2UI PUBLIC "/usr/include/suil-0/")

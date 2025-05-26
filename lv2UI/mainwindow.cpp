@@ -5,7 +5,6 @@
 #include <QWidget>
 #include <QWindow>
 #include "./ui_mainwindow.h"
-#include "NativeWinAdapter.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -17,31 +16,6 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle("LV2 plugin explorer");
     LV2::Plugin::manager().refreshPlugins();
     populatePluginList();
-#if 0
-    const auto plugins = LV2::Plugin::manager().getPlugins();
-    const auto pluginDesc = plugins.at(plugins.size() - 1);
-    auto instance = LV2::Plugin::manager().instantiate(pluginDesc);
-    if (instance.isValid()) {
-        qDebug("instance OK");
-        instance.activate();
-        auto uiInstance = _uiHost.createUIFor(instance, pluginDesc);
-        if (uiInstance.isValid()) {
-            qDebug("ui instance valid");
-            auto *calendarWindow = QWindow::fromWinId((WId) uiInstance.winHandle);
-            auto *pluginWidget = QWidget::createWindowContainer(calendarWindow);
-            ui->centralwidget->layout()->addWidget(pluginWidget);
-        }
-    } else {
-        qDebug("instance KO");
-    }
-
-#endif
-#if 0
-    auto winId = (WId) createCalendarWindow().windowID;
-    auto *win = QWindow::fromWinId(winId);
-    win->resize(QSize(400, 400));
-    win->showNormal();
-#endif
 }
 
 MainWindow::~MainWindow()
