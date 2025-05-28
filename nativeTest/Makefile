@@ -1,10 +1,7 @@
 #CXX := clang++
 
-CPPFLAGS= -g `pkg-config --cflags lilv-0`
-#CPPFLAGS+=-I/usr/local/include/lilv-0/
-
-LDFLAGS= `pkg-config --libs lilv-0`
-# liblilv-0 is in /usr/lib/aarch64-linux-gnu/ 
+CPPFLAGS= -g `pkg-config --cflags lilv-0` `pkg-config --cflags gtk+-3.0`
+LDFLAGS= `pkg-config --libs lilv-0` `pkg-config --libs gtk+-3.0`
 
 SRCS=src/main.cpp
 

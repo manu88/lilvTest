@@ -126,17 +126,16 @@ int main() {
   assert(instance);
 
   const size_t atom_capacity = 1024;
-  
+
   LV2_Atom_Sequence seq_in = {{sizeof(LV2_Atom_Sequence_Body),
                                uri_table_map(&uri_table, LV2_ATOM__Sequence)},
                               {0, 0}};
 
-  LV2_Atom_Sequence* seq_out =
-    (LV2_Atom_Sequence*)malloc(sizeof(LV2_Atom_Sequence) + atom_capacity);
-  
+  LV2_Atom_Sequence *seq_out =
+      (LV2_Atom_Sequence *)malloc(sizeof(LV2_Atom_Sequence) + atom_capacity);
+
   seq_out->atom.size = atom_capacity;
   seq_out->atom.type = uri_table_map(&uri_table, LV2_ATOM__Chunk);
-  
 
   lilv_instance_connect_port(instance, 0, &seq_in);
   lilv_instance_connect_port(instance, 1, seq_out);
