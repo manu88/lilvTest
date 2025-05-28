@@ -1,3 +1,4 @@
+#include "plugins.h"
 #include "uri.h"
 #include <assert.h>
 #include <gtk/gtk.h>
@@ -17,7 +18,12 @@
 void OnDestroy(GtkWidget *pWidget, gpointer pData);
 
 int main(int argc, char **argv) {
+  plugins_ctx_init();
+  plugins_print_all();
 
+  const LilvPlugin *plug =
+      plugins_get_plugin("http://lv2plug.in/plugins/eg-scope#Stereo");
+  assert(plug);
   GtkWidget *pWindow;
   gtk_init(&argc, &argv);
 
@@ -29,6 +35,8 @@ int main(int argc, char **argv) {
 
   gtk_main();
 
+  plugins_ctx_release();
+
   return EXIT_SUCCESS;
 }
 
@@ -36,85 +44,6 @@ void OnDestroy(GtkWidget *pWidget, gpointer pData) { gtk_main_quit(); }
 
 LilvWorld *world = NULL;
 const LilvPlugin *pluginToTest = NULL;
-
-static void printPluginInfos(const LilvPlugin *p) {
-  LilvNode *nodeName = lilv_plugin_get_name(p);
-  const LilvPluginClass *nodeClass = lilv_plugin_get_class(p);
-
-  const LilvNode *nodeClassLabel = lilv_plugin_class_get_label(nodeClass);
-  uint32_t numPorts = lilv_plugin_get_num_ports(p);
-  printf("plugin '%s' name = '%s' class '%s' ports=%i\n",
-         lilv_node_as_string(lilv_plugin_get_uri(p)),
-         lilv_node_as_string(nodeName), lilv_node_as_string(nodeClassLabel),
-         numPorts);
-
-  printf("Ports:\n");
-  LilvNode *portConnectionOptional =
-      lilv_new_uri(world, LV2_CORE__connectionOptional);
-  for (uint32_t i = 0; i < numPorts; i++) {
-    const LilvPort *port = lilv_plugin_get_port_by_index(p, i);
-    bool optional = lilv_port_has_property(p, port, portConnectionOptional);
-    const LilvNodes *portClasses = lilv_port_get_classes(p, port);
-    bool isInput = false;
-    bool isAudio = false;
-    bool isAtom = false;
-    LILV_FOREACH(nodes, pC, portClasses) {
-      const LilvNode *portClass = lilv_nodes_get(portClasses, pC);
-      const char *portClassName = lilv_node_as_string(portClass);
-
-      bool handled = false;
-      if (strcmp(portClassName, LV2_ATOM__AtomPort) == 0) {
-        isAtom = true;
-        handled = true;
-      }
-      if (strcmp(portClassName, LV2_CORE__ControlPort) == 0) {
-        isAudio = false;
-        handled = true;
-      } else if (strcmp(portClassName, LV2_CORE__AudioPort) == 0) {
-        isAudio = true;
-        handled = true;
-      }
-      if (strcmp(portClassName, LV2_CORE__InputPort) == 0) {
-        isInput = true;
-        handled = true;
-      } else if (strcmp(portClassName, LV2_CORE__OutputPort) == 0) {
-        isInput = false;
-        handled = true;
-      }
-      if (!handled) {
-        printf("\t\t '%s'\n", portClassName);
-        assert(false);
-      }
-    }
-    LilvNode *portName = lilv_port_get_name(p, port);
-    printf("\t port %i: %s %s %s name '%s' %s\n", i,
-           (isAudio ? "audio" : "control"), (isInput ? "input" : "output"),
-           (isAtom ? " (atom) " : ""), lilv_node_as_string(portName),
-           (optional ? " Optional" : ""));
-    lilv_node_free(portName);
-  }
-  if (strcmp(lilv_node_as_string(nodeName), "Example Parameters") == 0) {
-    pluginToTest = p;
-  }
-  lilv_node_free(nodeName);
-
-  printf("features:\n");
-  LilvNodes *features = lilv_plugin_get_required_features(p);
-  LILV_FOREACH(nodes, fI, features) {
-    const LilvNode *nodeFeat = lilv_nodes_get(features, fI);
-    const char *featName = lilv_node_as_string(nodeFeat);
-    printf("\trequired feat: '%s'\n", featName);
-  }
-  lilv_nodes_free(features);
-
-  features = lilv_plugin_get_optional_features(p);
-  LILV_FOREACH(nodes, fI, features) {
-    const LilvNode *nodeFeat = lilv_nodes_get(features, fI);
-    const char *featName = lilv_node_as_string(nodeFeat);
-    printf("\toptional feat: '%s'\n", featName);
-  }
-  lilv_nodes_free(features);
-}
 
 int main2() {
   printf("Test Lilv\n");
@@ -126,10 +55,9 @@ int main2() {
   lilv_world_load_all(world);
 
   const LilvPlugins *plugins = lilv_world_get_all_plugins(world);
-
   LILV_FOREACH(plugins, i, plugins) {
     const LilvPlugin *p = lilv_plugins_get(plugins, i);
-    printPluginInfos(p);
+    plugins_print_info(p);
     printf("\n\n");
   }
 
