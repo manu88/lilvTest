@@ -1,10 +1,16 @@
 #CXX := clang++
 
-CPPFLAGS= -g -std=c++17
-CPPFLAGS+=-I/usr/local/include/lilv-0/
+CPPFLAGS= -g -std=c++17 `pkg-config --cflags lilv-0`
 
-LDFLAGS= -llilv-0
-# liblilv-0 is in /usr/lib/aarch64-linux-gnu/ 
+UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Linux)
+        CCFLAGS += -D LINUX
+    endif
+    ifeq ($(UNAME_S),Darwin)
+        CPPFLAGS+= -D MACOS
+    endif
+
+LDFLAGS= `pkg-config --libs lilv-0` 
 
 SRCS=src/main.cpp
 
