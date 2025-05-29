@@ -5,7 +5,6 @@
 #include <QWidget>
 #include <QWindow>
 #include "./ui_mainwindow.h"
-#include "testwin.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -18,8 +17,6 @@ MainWindow::MainWindow(QWidget *parent)
     LV2::Plugin::manager().refreshPlugins();
     populatePluginList();
 
-    auto *testWin = createCalendarWindow();
-    testWin->show();
 }
 
 MainWindow::~MainWindow()
