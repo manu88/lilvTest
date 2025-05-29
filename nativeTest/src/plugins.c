@@ -156,19 +156,18 @@ static void _suilPortWriteFunc(SuilController controller, uint32_t port_index,
 
   if(strcmp(protocolName, LV2_ATOM__eventTransfer) == 0){
     printf("\tEvent transfer buffer size %u\n", buffer_size);
-    const LV2_Atom_Sequence *body = (const LV2_Atom_Sequence *) buffer;
-    LV2_ATOM_SEQUENCE_FOREACH(body, iter){
-      uint32_t typeURID = iter->body.type;
-      const char* typeURI = uri_table_unmap(&ctx->uri_table, typeURID);
-      printf("Key %i '%s'\n", typeURID, typeURI);
-      if(strcmp(typeURI, LV2_ATOM__Float) == 0){
-        const LV2_Atom_Float *val =  (const LV2_Atom_Float *) &iter->body;
-        printf("is float, val=%f\n", val->body);
-      }else if(strcmp(typeURI, LV2_ATOM__Int) == 0){
-        const LV2_Atom_Int *val =  (const LV2_Atom_Int *) &iter->body;
-        printf("is int, val=%i\n", val->body);
+
+    const LV2_Atom_Object *obj = (const LV2_Atom_Object *) buffer;
+    LV2_ATOM_OBJECT_FOREACH(obj, iter){
+      const char* typeURI = uri_table_unmap(&ctx->uri_table, iter->key);
+      printf("Key %i '%s'\n", iter->key, typeURI);
+      if(strcmp(typeURI, "http://lv2plug.in/plugins/eg-scope#ui-spp") == 0){
+        const LV2_Atom_Int *val =  (const LV2_Atom_Int *) &iter->value;
+        printf("val %i\n", val->body);
+      }else if(strcmp(typeURI, "http://lv2plug.in/plugins/eg-scope#ui-amp") == 0){
+        const LV2_Atom_Float *val =  (const LV2_Atom_Float *) &iter->value;
+        printf("val %f\n", val->body);
       }
-      
     }
   }
 }
