@@ -2,5 +2,5 @@
 #import <AppKit/AppKit.h>
 
 #ifdef MACOS
-void platformPostFix(void) { [NSApp activateIgnoringOtherApps:YES]; }
+void platformPostFix(void) { [NSApp activate]; }
 #endif
