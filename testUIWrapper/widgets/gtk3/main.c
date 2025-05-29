@@ -1,28 +1,34 @@
-#include <gtk/gtk.h>
+#include <stdlib.h>
+#include <gtk/gtk.h> 
 
-static void
-activate (GtkApplication* app,
-          gpointer        user_data)
-{
-  GtkWidget *window;
+void OnDestroy(GtkWidget *pWidget, gpointer pData);
 
-  window = gtk_application_window_new (app);
-  gtk_window_set_title (GTK_WINDOW (window), "Window");
-  gtk_window_set_default_size (GTK_WINDOW (window), 200, 200);
-  gtk_widget_show_all (window);
+int main(int argc,char **argv)
+{ 
+    /* Déclaration du widget */
+    GtkWidget *pWindow;
+    gtk_init(&argc,&argv);
+    
+    /* Création de la fenêtre */
+    pWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(pWindow), "GTK2 widget");
+    gtk_window_set_default_size(GTK_WINDOW(pWindow), 320, 200);
+    /* Connexion du signal "destroy" */
+    g_signal_connect(G_OBJECT(pWindow), "destroy", G_CALLBACK(OnDestroy), NULL);
+    /* Affichage de la fenêtre */
+
+
+    GtkWidget* label = gtk_label_new("label");
+    gtk_container_add(GTK_CONTAINER(pWindow), label);
+    gtk_widget_show_all(pWindow);
+    /* Demarrage de la boucle évènementielle */
+    gtk_main();
+    
+    return EXIT_SUCCESS;
 }
 
-int
-main (int    argc,
-      char **argv)
+void OnDestroy(GtkWidget *pWidget, gpointer pData)
 {
-  GtkApplication *app;
-  int status;
-
-  app = gtk_application_new ("org.gtk.example", G_APPLICATION_FLAGS_NONE);
-  g_signal_connect (app, "activate", G_CALLBACK (activate), NULL);
-  status = g_application_run (G_APPLICATION (app), argc, argv);
-  g_object_unref (app);
-
-  return status;
+    /* Arret de la boucle évènementielle */
+    gtk_main_quit();
 }

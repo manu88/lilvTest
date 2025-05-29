@@ -28,6 +28,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         plugindescription.h
         plugininstance.h plugininstance.cpp
         URIMap.h
+        testwin.h testwin.cpp
 
     )
 # Define target properties for Android with Qt 6 as:
@@ -69,7 +70,9 @@ target_link_libraries(lv2UI PUBLIC lilv-0)
 target_link_libraries(lv2UI PUBLIC suil-0)
 target_link_libraries(lv2UI PUBLIC serd-0)
 
-
+find_package(GTK3)
+target_link_libraries(lv2UI PRIVATE PkgConfig::GTK3)
+target_compile_definitions(lv2UI PRIVATE QT_NO_SIGNALS_SLOTS_KEYWORDS)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
