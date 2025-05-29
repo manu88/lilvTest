@@ -1,32 +1,44 @@
-CC := clang++
-
-CPPFLAGS= -g `pkg-config --cflags lilv-0` `pkg-config --cflags suil-0` `pkg-config --cflags gtk+-2.0` `pkg-config --cflags serd-0`
-LDFLAGS= `pkg-config --libs lilv-0` `pkg-config --libs gtk+-2.0` `pkg-config --libs suil-0` `pkg-config --libs serd-0`
+CCFLAGS= -g `pkg-config --cflags lilv-0` `pkg-config --cflags suil-0` `pkg-config --cflags gtk+-2.0` `pkg-config --cflags serd-0`
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
-	CPPFLAGS+= -D LINUX
+	CCFLAGS += -D LINUX
 endif
 ifeq ($(UNAME_S),Darwin)
-	CPPFLAGS+= -D MACOS
+	CCFLAGS+= -D MACOS
 endif
 
-SRCS=src/main.c src/plugins.c
+LDFLAGS= `pkg-config --libs lilv-0` `pkg-config --libs gtk+-2.0` `pkg-config --libs suil-0` `pkg-config --libs serd-0`
 
-BIN_NAME=testUI
-OBJS=$(subst .c,.o,$(SRCS))
+SOURCES=$(wildcard src/*.c)
 ifeq ($(UNAME_S),Darwin)
-	OBJS+=$(subst .m,.o,$(SRCS))
+	SOURCES+=$(wildcard src/*.m)
+endif
+	OBJECTS=$(filter %.o,$(SOURCES:.c=.o))
+
+ifeq ($(UNAME_S),Darwin)
+OBJECTS+=$(filter %.o,$(SOURCES:.m=.o))
 endif
 
-all: $(BIN_NAME) 
+EXECUTABLE= testUI
+TEST_EXEC = UnitTests
+TEST_CPP = decompiler
 
-$(BIN_NAME): $(OBJS)
-	CC $(OBJS) $(LDFLAGS) -o $(BIN_NAME) 
+all: $(SOURCES) $(EXECUTABLE)
+
+%.o: %.c
+	CC -c $(CCFLAGS) $< -o $@
+
+ifeq ($(UNAME_S),Darwin)
+%.o: %.m
+	CC -c $(CCFLAGS) $< -o $@
+endif
+
+$(EXECUTABLE): $(OBJECTS)
+	CC $(OBJECTS) $(CCFLAGS) $(LDFLAGS) -o $(EXECUTABLE)
 
 clean:
-	rm -f $(OBJS)
-	rm -rf $(BIN_NAME)
+	rm -f $(OBJECTS)
+	rm -f $(EXECUTABLE)
 
 .PHONY: clean all
-
