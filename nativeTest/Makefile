@@ -1,7 +1,7 @@
 #CXX := clang++
 
-CPPFLAGS= -g `pkg-config --cflags lilv-0` `pkg-config --cflags gtk+-3.0`
-LDFLAGS= `pkg-config --libs lilv-0` `pkg-config --libs gtk+-3.0`
+CPPFLAGS= -g `pkg-config --cflags lilv-0` `pkg-config --cflags suil-0` `pkg-config --cflags gtk+-2.0` `pkg-config --cflags serd-0`
+LDFLAGS= `pkg-config --libs lilv-0` `pkg-config --libs gtk+-2.0` `pkg-config --libs suil-0` `pkg-config --libs serd-0`
 
 UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Linux)
@@ -10,7 +10,7 @@ UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Darwin)
         CPPFLAGS+= -D MACOS
     endif
-	
+
 SRCS=src/main.c src/plugins.c
 
 BIN_NAME=testUI

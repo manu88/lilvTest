@@ -1,9 +1,9 @@
 #include "plugins.h"
-#include "uri.h"
 #include <assert.h>
 #include <lilv/lilv.h>
 #include <lv2/atom/atom.h>
 #include <lv2/urid/urid.h>
+#include <stdio.h>
 #include <string.h>
 
 #ifdef MACOS
@@ -12,28 +12,43 @@
 #define LV2_PATH "/usr/local/lib/aarch64-linux-gnu/lv2"
 #endif
 
-typedef struct {
-  LilvWorld *world;
-  URITable uri_table;
-} PluginsContext;
+static void _suilPortWriteFunc( //
+    SuilController controller, uint32_t port_index, uint32_t buffer_size,
+    uint32_t protocol, void const *buffer);
 
-PluginsContext _ctx;
+static uint32_t _suilPortIndexFunc( //
+    SuilController controller, const char *port_symbol);
 
-void plugins_ctx_init() {
-  memset(&_ctx, 0, sizeof(PluginsContext));
-  _ctx.world = lilv_world_new();
-  LilvNode *lv2_path = lilv_new_string(_ctx.world, LV2_PATH);
-  lilv_world_set_option(_ctx.world, LILV_OPTION_LV2_PATH, lv2_path);
+static uint32_t _suilPortSubscribeFunc( //
+    SuilController controller, uint32_t port_index, uint32_t protocol,
+    const LV2_Feature *const *features);
+
+static uint32_t _suilPortUnsubscribeFunc( //
+    SuilController controller, uint32_t port_index, uint32_t protocol,
+    const LV2_Feature *const *features);
+
+void plugins_ctx_init(PluginsContext *ctx) {
+  memset(ctx, 0, sizeof(PluginsContext));
+  ctx->world = lilv_world_new();
+  LilvNode *lv2_path = lilv_new_string(ctx->world, LV2_PATH);
+  lilv_world_set_option(ctx->world, LILV_OPTION_LV2_PATH, lv2_path);
   lilv_node_free(lv2_path);
-  lilv_world_load_all(_ctx.world);
+  lilv_world_load_all(ctx->world);
 
-  uri_table_init(&_ctx.uri_table);
+  uri_table_init(&ctx->uri_table);
+
+  suil_init(0, NULL, SUIL_ARG_NONE);
+  ctx->host = suil_host_new(_suilPortWriteFunc, _suilPortIndexFunc,
+                            _suilPortSubscribeFunc, _suilPortUnsubscribeFunc);
 }
 
-void plugins_ctx_release() { lilv_world_free(_ctx.world); }
+void plugins_ctx_release(PluginsContext *ctx) {
+  lilv_world_free(ctx->world);
+  suil_host_free(ctx->host);
+}
 
-const LilvPlugin *plugins_get_plugin(const char *uri) {
-  const LilvPlugins *plugins = lilv_world_get_all_plugins(_ctx.world);
+const LilvPlugin *plugins_get_plugin(PluginsContext *ctx, const char *uri) {
+  const LilvPlugins *plugins = lilv_world_get_all_plugins(ctx->world);
   LILV_FOREACH(plugins, i, plugins) {
     const LilvPlugin *p = lilv_plugins_get(plugins, i);
     if (strcmp(lilv_node_as_string(lilv_plugin_get_uri(p)), uri) == 0) {
@@ -43,16 +58,16 @@ const LilvPlugin *plugins_get_plugin(const char *uri) {
   return NULL;
 }
 
-void plugins_print_all() {
-  const LilvPlugins *plugins = lilv_world_get_all_plugins(_ctx.world);
+void plugins_print_all(PluginsContext *ctx) {
+  const LilvPlugins *plugins = lilv_world_get_all_plugins(ctx->world);
   LILV_FOREACH(plugins, i, plugins) {
     const LilvPlugin *p = lilv_plugins_get(plugins, i);
-    plugins_print_info(p);
+    plugins_print_info(ctx, p);
     printf("\n\n");
   }
 }
 
-void plugins_print_info(const LilvPlugin *p) {
+void plugins_print_info(PluginsContext *ctx, const LilvPlugin *p) {
   LilvNode *nodeName = lilv_plugin_get_name(p);
   const LilvPluginClass *nodeClass = lilv_plugin_get_class(p);
 
@@ -65,7 +80,7 @@ void plugins_print_info(const LilvPlugin *p) {
 
   printf("Ports:\n");
   LilvNode *portConnectionOptional =
-      lilv_new_uri(_ctx.world, LV2_CORE__connectionOptional);
+      lilv_new_uri(ctx->world, LV2_CORE__connectionOptional);
   for (uint32_t i = 0; i < numPorts; i++) {
     const LilvPort *port = lilv_plugin_get_port_by_index(p, i);
     bool optional = lilv_port_has_property(p, port, portConnectionOptional);
@@ -127,4 +142,32 @@ void plugins_print_info(const LilvPlugin *p) {
     printf("\toptional feat: '%s'\n", featName);
   }
   lilv_nodes_free(features);
+}
+
+static void _suilPortWriteFunc(SuilController controller, uint32_t port_index,
+                               uint32_t buffer_size, uint32_t protocol,
+                               void const *buffer) {
+  PluginsContext *ctx = (PluginsContext *)controller;
+  const char *protocolName = uri_table_unmap(ctx, protocol);
+  printf("_suilPortWriteFunc on protocol %u '%s'\n", protocol, protocolName);
+}
+
+static uint32_t _suilPortIndexFunc(SuilController controller,
+                                   const char *port_symbol) {
+  printf("_suilPortIndexFunc port_symbol '%s'\n", port_symbol);
+  return 0;
+}
+
+static uint32_t _suilPortSubscribeFunc(SuilController controller,
+                                       uint32_t port_index, uint32_t protocol,
+                                       const LV2_Feature *const *features) {
+  printf("_suilPortSubscribeFunc on protocol %u\n", protocol);
+  return 0;
+}
+
+static uint32_t _suilPortUnsubscribeFunc(SuilController controller,
+                                         uint32_t port_index, uint32_t protocol,
+                                         const LV2_Feature *const *features) {
+  printf("_suilPortUnsubscribeFunc on protocol %u\n", protocol);
+  return 0;
 }

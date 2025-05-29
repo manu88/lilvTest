@@ -4,7 +4,9 @@
 #include <gtk/gtk.h>
 #include <lilv/lilv.h>
 #include <lv2/atom/atom.h>
+#include <lv2/ui/ui.h>
 #include <lv2/urid/urid.h>
+#include <serd/serd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,84 +17,78 @@
 #define LV2_PATH "/usr/local/lib/aarch64-linux-gnu/lv2"
 #endif
 
-void OnDestroy(GtkWidget *pWidget, gpointer pData);
+PluginsContext ctx;
+
+static void OnDestroy(GtkWidget *pWidget, gpointer pData) { gtk_main_quit(); }
 
 int main(int argc, char **argv) {
-  plugins_ctx_init();
-  plugins_print_all();
 
-  const LilvPlugin *plug =
-      plugins_get_plugin("http://lv2plug.in/plugins/eg-scope#Stereo");
+  gtk_init(0, NULL);
+  plugins_ctx_init(&ctx);
+  plugins_print_all(&ctx);
+
+  const char *pluginURI = "http://lv2plug.in/plugins/eg-scope#Stereo";
+  const LilvPlugin *plug = plugins_get_plugin(&ctx, pluginURI);
   assert(plug);
-  GtkWidget *pWindow;
-  gtk_init(&argc, &argv);
 
-  pWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  printf("Create SUIL instance for '%s'\n", pluginURI);
 
-  g_signal_connect(G_OBJECT(pWindow), "destroy", G_CALLBACK(OnDestroy), NULL);
+  const LilvNode *binaryURINode = NULL;
+  const LilvNode *bundleURINode = NULL;
 
-  gtk_widget_show(pWindow);
+  const LilvUI *ui = NULL;
+  LILV_API LilvUIs *uis = lilv_plugin_get_uis(plug);
+  LILV_FOREACH(uis, i, uis) {
+    ui = lilv_uis_get(uis, i);
+    const LilvNodes *uiClasses = lilv_ui_get_classes(ui);
 
-  gtk_main();
-
-  plugins_ctx_release();
-
-  return EXIT_SUCCESS;
-}
-
-void OnDestroy(GtkWidget *pWidget, gpointer pData) { gtk_main_quit(); }
-
-LilvWorld *world = NULL;
-const LilvPlugin *pluginToTest = NULL;
-
-int main2() {
-  printf("Test Lilv\n");
-  world = lilv_world_new();
-
-  LilvNode *lv2_path = lilv_new_string(world, LV2_PATH);
-  lilv_world_set_option(world, LILV_OPTION_LV2_PATH, lv2_path);
-  lilv_node_free(lv2_path);
-  lilv_world_load_all(world);
-
-  const LilvPlugins *plugins = lilv_world_get_all_plugins(world);
-  LILV_FOREACH(plugins, i, plugins) {
-    const LilvPlugin *p = lilv_plugins_get(plugins, i);
-    plugins_print_info(p);
-    printf("\n\n");
+    LILV_FOREACH(nodes, iter, uiClasses) {
+      const LilvNodes *classNode = lilv_nodes_get(uiClasses, iter);
+      printf("UI class '%s'\n", lilv_node_as_string(classNode));
+    }
+    binaryURINode = lilv_ui_get_binary_uri(ui);
+    bundleURINode = lilv_ui_get_bundle_uri(ui);
+    break;
   }
-
-  URITable uri_table;
-  uri_table_init(&uri_table);
+  free(uis);
+  printf("binary URI= '%s'  bundle URI='%s'\n",
+         lilv_node_as_string(binaryURINode),
+         lilv_node_as_string(bundleURINode));
 
   LV2_URID_Map mapHandle;
   mapHandle.map = uri_table_map;
-  mapHandle.handle = &uri_table;
+  mapHandle.handle = &ctx;
   LV2_Feature feat;
   feat.URI = LV2_URID__map;
   feat.data = &mapHandle;
-  LV2_Feature *features[2] = {&feat, NULL};
-  LilvInstance *instance =
-      lilv_plugin_instantiate(pluginToTest, 48000.0, features);
-  assert(instance);
+  const LV2_Feature *const features[2] = {&feat, NULL};
 
-  const size_t atom_capacity = 1024;
+  const char *bundle_uri = lilv_node_as_uri(lilv_ui_get_bundle_uri(ui));
+  const char *binary_uri = lilv_node_as_uri(lilv_ui_get_binary_uri(ui));
+  const char *bundle_path =
+      (const char *)serd_file_uri_parse((const uint8_t *)bundle_uri, NULL);
+  const char *binary_path =
+      (const char *)serd_file_uri_parse((const uint8_t *)binary_uri, NULL);
 
-  LV2_Atom_Sequence seq_in = {{sizeof(LV2_Atom_Sequence_Body),
-                               uri_table_map(&uri_table, LV2_ATOM__Sequence)},
-                              {0, 0}};
+  SuilInstance *uiInstance =
+      suil_instance_new(ctx.host, &ctx, LV2_UI__GtkUI,
+                        lilv_node_as_uri(lilv_plugin_get_uri(plug)),
+                        lilv_node_as_uri(lilv_ui_get_uri(ui)), LV2_UI__GtkUI,
+                        bundle_path, binary_path, features);
+  assert(uiInstance);
 
-  LV2_Atom_Sequence *seq_out =
-      (LV2_Atom_Sequence *)malloc(sizeof(LV2_Atom_Sequence) + atom_capacity);
+  GtkWidget *plugWin = (GtkWidget *)suil_instance_get_widget(uiInstance);
+  assert(plugWin);
+  GtkWidget *pWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  g_signal_connect(G_OBJECT(pWindow), "destroy", G_CALLBACK(OnDestroy), NULL);
+  gtk_window_set_position(GTK_WINDOW(pWindow), GTK_WIN_POS_CENTER);
+  gtk_window_set_default_size(GTK_WINDOW(pWindow), 320, 200);
+  gtk_window_set_title(GTK_WINDOW(pWindow), "GTK Plugin");
+  gtk_container_add(GTK_CONTAINER(pWindow), plugWin);
+  gtk_widget_show_all(pWindow);
+  gtk_main();
 
-  seq_out->atom.size = atom_capacity;
-  seq_out->atom.type = uri_table_map(&uri_table, LV2_ATOM__Chunk);
-
-  lilv_instance_connect_port(instance, 0, &seq_in);
-  lilv_instance_connect_port(instance, 1, seq_out);
-  lilv_instance_activate(instance);
-  lilv_instance_run(instance, 64);
-
-  lilv_instance_free(instance);
-  lilv_world_free(world);
+  suil_instance_free(uiInstance);
+  plugins_ctx_release(&ctx);
   return 0;
 }
