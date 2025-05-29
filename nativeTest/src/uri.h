@@ -7,7 +7,8 @@
 
 #pragma once
 #include <lv2/urid/urid.h>
-
+#include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -47,6 +48,7 @@ uri_table_map(LV2_URID_Map_Handle handle, const char* uri)
   table->uris = (char**)realloc(table->uris, ++table->n_uris * sizeof(char*));
   table->uris[table->n_uris - 1] = (char*)malloc(len + 1);
   memcpy(table->uris[table->n_uris - 1], uri, len + 1);
+  printf("URI MAP: add '%s' %zu\n", uri ,table->n_uris);
   return table->n_uris;
 }
 
@@ -58,4 +60,11 @@ uri_table_unmap(LV2_URID_Map_Handle handle, LV2_URID urid)
     return table->uris[urid - 1];
   }
   return NULL;
+}
+
+static void uri_table_print(LV2_URID_Map_Handle handle){
+  URITable* table = (URITable*)handle;
+  for(size_t i=0; i< table->n_uris; i++){
+    printf("%zi: '%s'\n", i, table->uris[i]);
+  }
 }

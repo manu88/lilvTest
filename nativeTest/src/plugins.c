@@ -1,7 +1,9 @@
 #include "plugins.h"
+#include "uri.h"
 #include <assert.h>
 #include <lilv/lilv.h>
 #include <lv2/atom/atom.h>
+#include <lv2/atom/util.h>
 #include <lv2/urid/urid.h>
 #include <stdio.h>
 #include <string.h>
@@ -12,20 +14,20 @@
 #define LV2_PATH "/usr/local/lib/aarch64-linux-gnu/lv2"
 #endif
 
-static void _suilPortWriteFunc( //
-    SuilController controller, uint32_t port_index, uint32_t buffer_size,
-    uint32_t protocol, void const *buffer);
+static void _suilPortWriteFunc(SuilController controller, uint32_t port_index,
+                               uint32_t buffer_size, uint32_t protocol,
+                               void const *buffer);
 
-static uint32_t _suilPortIndexFunc( //
-    SuilController controller, const char *port_symbol);
+static uint32_t _suilPortIndexFunc(SuilController controller,
+                                   const char *port_symbol);
 
-static uint32_t _suilPortSubscribeFunc( //
-    SuilController controller, uint32_t port_index, uint32_t protocol,
-    const LV2_Feature *const *features);
+static uint32_t _suilPortSubscribeFunc(SuilController controller,
+                                       uint32_t port_index, uint32_t protocol,
+                                       const LV2_Feature *const *features);
 
-static uint32_t _suilPortUnsubscribeFunc( //
-    SuilController controller, uint32_t port_index, uint32_t protocol,
-    const LV2_Feature *const *features);
+static uint32_t _suilPortUnsubscribeFunc(SuilController controller,
+                                         uint32_t port_index, uint32_t protocol,
+                                         const LV2_Feature *const *features);
 
 void plugins_ctx_init(PluginsContext *ctx) {
   memset(ctx, 0, sizeof(PluginsContext));
@@ -148,8 +150,27 @@ static void _suilPortWriteFunc(SuilController controller, uint32_t port_index,
                                uint32_t buffer_size, uint32_t protocol,
                                void const *buffer) {
   PluginsContext *ctx = (PluginsContext *)controller;
-  const char *protocolName = uri_table_unmap(ctx, protocol);
-  printf("_suilPortWriteFunc on protocol %u '%s'\n", protocol, protocolName);
+  const char *protocolName = uri_table_unmap(&ctx->uri_table, protocol);
+  printf("_suilPortWriteFunc on protocol %u '%s' port index %u\n", protocol,
+         protocolName, port_index);
+
+  if(strcmp(protocolName, LV2_ATOM__eventTransfer) == 0){
+    printf("\tEvent transfer buffer size %u\n", buffer_size);
+    const LV2_Atom_Sequence *body = (const LV2_Atom_Sequence *) buffer;
+    LV2_ATOM_SEQUENCE_FOREACH(body, iter){
+      uint32_t typeURID = iter->body.type;
+      const char* typeURI = uri_table_unmap(&ctx->uri_table, typeURID);
+      printf("Key %i '%s'\n", typeURID, typeURI);
+      if(strcmp(typeURI, LV2_ATOM__Float) == 0){
+        const LV2_Atom_Float *val =  (const LV2_Atom_Float *) &iter->body;
+        printf("is float, val=%f\n", val->body);
+      }else if(strcmp(typeURI, LV2_ATOM__Int) == 0){
+        const LV2_Atom_Int *val =  (const LV2_Atom_Int *) &iter->body;
+        printf("is int, val=%i\n", val->body);
+      }
+      
+    }
+  }
 }
 
 static uint32_t _suilPortIndexFunc(SuilController controller,

@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
 
   LV2_URID_Map mapHandle;
   mapHandle.map = uri_table_map;
-  mapHandle.handle = &ctx;
+  mapHandle.handle = &ctx.uri_table;
   LV2_Feature feat;
   feat.URI = LV2_URID__map;
   feat.data = &mapHandle;
@@ -82,7 +82,6 @@ int main(int argc, char **argv) {
   GtkWidget *pWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   g_signal_connect(G_OBJECT(pWindow), "destroy", G_CALLBACK(OnDestroy), NULL);
   gtk_window_set_position(GTK_WINDOW(pWindow), GTK_WIN_POS_CENTER);
-  gtk_window_set_default_size(GTK_WINDOW(pWindow), 320, 200);
   gtk_window_set_title(GTK_WINDOW(pWindow), "GTK Plugin");
   gtk_container_add(GTK_CONTAINER(pWindow), plugWin);
   gtk_widget_show_all(pWindow);
