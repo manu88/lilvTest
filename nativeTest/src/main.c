@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
     const LilvNodes *uiClasses = lilv_ui_get_classes(ui);
 
     LILV_FOREACH(nodes, iter, uiClasses) {
-      const LilvNodes *classNode = lilv_nodes_get(uiClasses, iter);
+      const LilvNode *classNode = lilv_nodes_get(uiClasses, iter);
       printf("UI class '%s'\n", lilv_node_as_string(classNode));
     }
     binaryURINode = lilv_ui_get_binary_uri(ui);
