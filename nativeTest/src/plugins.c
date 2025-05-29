@@ -154,19 +154,20 @@ static void _suilPortWriteFunc(SuilController controller, uint32_t port_index,
   printf("_suilPortWriteFunc on protocol %u '%s' port index %u\n", protocol,
          protocolName, port_index);
 
-  if(strcmp(protocolName, LV2_ATOM__eventTransfer) == 0){
+  if (strcmp(protocolName, LV2_ATOM__eventTransfer) == 0) {
     printf("\tEvent transfer buffer size %u\n", buffer_size);
-    
-    const LV2_Atom_Object *obj = (const LV2_Atom_Object *) buffer;
-    LV2_ATOM_OBJECT_FOREACH(obj, iter){
-      const char* typeURI = uri_table_unmap(&ctx->uri_table, iter->value.type);
-      const char* keyURI = uri_table_unmap(&ctx->uri_table, iter->key);
+
+    const LV2_Atom_Object *obj = (const LV2_Atom_Object *)buffer;
+    LV2_ATOM_OBJECT_FOREACH(obj, iter) {
+      const char *typeURI = uri_table_unmap(&ctx->uri_table, iter->value.type);
+      const char *keyURI = uri_table_unmap(&ctx->uri_table, iter->key);
       printf("Key %i '%s' type %s\n", iter->key, keyURI, typeURI);
-      if(strcmp(keyURI, "http://lv2plug.in/plugins/eg-scope#ui-spp") == 0){
-        const LV2_Atom_Int *val =  (const LV2_Atom_Int *) &iter->value;
+      if (strcmp(keyURI, "http://lv2plug.in/plugins/eg-scope#ui-spp") == 0) {
+        const LV2_Atom_Int *val = (const LV2_Atom_Int *)&iter->value;
         printf("val %i\n", val->body);
-      }else if(strcmp(keyURI, "http://lv2plug.in/plugins/eg-scope#ui-amp") == 0){
-        const LV2_Atom_Float *val =  (const LV2_Atom_Float *) &iter->value;
+      } else if (strcmp(keyURI, "http://lv2plug.in/plugins/eg-scope#ui-amp") ==
+                 0) {
+        const LV2_Atom_Float *val = (const LV2_Atom_Float *)&iter->value;
         printf("val %f\n", val->body);
       }
     }

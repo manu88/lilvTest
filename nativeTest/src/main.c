@@ -1,6 +1,8 @@
+#include "osx_stuff.h"
 #include "plugins.h"
 #include "uri.h"
 #include <assert.h>
+#include <gio/gio.h>
 #include <gtk/gtk.h>
 #include <lilv/lilv.h>
 #include <lv2/atom/atom.h>
@@ -22,16 +24,19 @@ PluginsContext ctx;
 static void OnDestroy(GtkWidget *pWidget, gpointer pData) { gtk_main_quit(); }
 
 int main(int argc, char **argv) {
-
   gtk_init(0, NULL);
-  plugins_ctx_init(&ctx);
-  plugins_print_all(&ctx);
 
-  const char *pluginURI = argc > 1 ? argv[1]: "http://lv2plug.in/plugins/eg-scope#Stereo";
+  plugins_ctx_init(&ctx);
+
+  const char *pluginURI =
+      argc > 1 ? argv[1] : "http://lv2plug.in/plugins/eg-scope#Stereo";
   const LilvPlugin *plug = plugins_get_plugin(&ctx, pluginURI);
   assert(plug);
 
-  printf("Create SUIL instance for '%s'\n", pluginURI);
+  LilvNode *pluginNameNode = lilv_plugin_get_name(plug);
+  const char *pluginName = lilv_node_as_string(pluginNameNode);
+
+  printf("Create SUIL instance for '%s' '%s'\n", pluginURI, pluginName);
 
   const LilvNode *binaryURINode = NULL;
   const LilvNode *bundleURINode = NULL;
@@ -70,6 +75,7 @@ int main(int argc, char **argv) {
   const char *binary_path =
       (const char *)serd_file_uri_parse((const uint8_t *)binary_uri, NULL);
 
+  g_application_new(pluginName, G_APPLICATION_DEFAULT_FLAGS);
   SuilInstance *uiInstance =
       suil_instance_new(ctx.host, &ctx, LV2_UI__GtkUI,
                         lilv_node_as_uri(lilv_plugin_get_uri(plug)),
@@ -79,13 +85,18 @@ int main(int argc, char **argv) {
 
   GtkWidget *plugWin = (GtkWidget *)suil_instance_get_widget(uiInstance);
   assert(plugWin);
+
   GtkWidget *pWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   g_signal_connect(G_OBJECT(pWindow), "destroy", G_CALLBACK(OnDestroy), NULL);
   gtk_window_set_position(GTK_WINDOW(pWindow), GTK_WIN_POS_CENTER);
   gtk_window_set_title(GTK_WINDOW(pWindow), pluginURI);
   gtk_container_add(GTK_CONTAINER(pWindow), plugWin);
   gtk_widget_show_all(pWindow);
+
+  platformPostFix();
   gtk_main();
+
+  free(pluginNameNode);
 
   suil_instance_free(uiInstance);
   plugins_ctx_release(&ctx);
