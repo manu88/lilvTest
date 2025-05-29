@@ -11,8 +11,6 @@
 #include <serd/serd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-
 
 #ifdef LINUX
 // stub for linux, no need to do anything
@@ -30,17 +28,26 @@ PluginsContext ctx;
 static void OnDestroy(GtkWidget *pWidget, gpointer pData) { gtk_main_quit(); }
 
 int main(int argc, char **argv) {
-  gtk_init(0, NULL);
-
-  plugins_ctx_init(&ctx);
-
-  const char *pluginURI =
+  char *pluginURI =
       argc > 1 ? argv[1] : "http://lv2plug.in/plugins/eg-scope#Stereo";
+  plugins_ctx_init(&ctx);
   const LilvPlugin *plug = plugins_get_plugin(&ctx, pluginURI);
+  if (!plug){
+    perror("no such plugin");
+    return 1;
+  }
   assert(plug);
 
   LilvNode *pluginNameNode = lilv_plugin_get_name(plug);
   const char *pluginName = lilv_node_as_string(pluginNameNode);
+
+
+  
+  int newArgC = 1;
+  char** newArgv = {(char**)&pluginName, NULL};
+
+  gtk_init(&newArgC, &newArgv);
+
 
   printf("Create SUIL instance for '%s' '%s'\n", pluginURI, pluginName);
 
@@ -100,8 +107,8 @@ int main(int argc, char **argv) {
   gtk_widget_show_all(pWindow);
 
   platformPostFix();
+  //gtk_main();
   gtk_main();
-
   free(pluginNameNode);
 
   suil_instance_free(uiInstance);
