@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     connect(ui->refreshButton, &QToolButton::clicked, this, &MainWindow::updateListClicked);
+    connect(ui->createUIButton, &QToolButton::clicked, this, &MainWindow::createUIClicked);
     setWindowTitle("LV2 plugin explorer");
     LV2::Plugin::manager().refreshPlugins();
     populatePluginList();
@@ -28,6 +29,17 @@ void MainWindow::updateListClicked()
 {
     LV2::Plugin::manager().refreshPlugins();
     populatePluginList();
+}
+
+void MainWindow::createUIClicked(){
+    auto pluginIndex = ui->treeWidget->currentIndex();
+    if (pluginIndex.row() <0){
+        return;
+    }
+    const auto pluginDesc =  LV2::Plugin::manager().getPlugins().at(pluginIndex.row());
+    qDebug("plugin selected index %i : %s", pluginIndex.row(), pluginDesc.uri.toStdString().c_str());
+
+    _pluginUIManager.createInstanceFor(pluginDesc);
 }
 
 void MainWindow::populatePluginList()

@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
   plugins_ctx_init(&ctx);
   plugins_print_all(&ctx);
 
-  const char *pluginURI = "http://lv2plug.in/plugins/eg-scope#Stereo";
+  const char *pluginURI = argc > 1 ? argv[1]: "http://lv2plug.in/plugins/eg-scope#Stereo";
   const LilvPlugin *plug = plugins_get_plugin(&ctx, pluginURI);
   assert(plug);
 
@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
   GtkWidget *pWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   g_signal_connect(G_OBJECT(pWindow), "destroy", G_CALLBACK(OnDestroy), NULL);
   gtk_window_set_position(GTK_WINDOW(pWindow), GTK_WIN_POS_CENTER);
-  gtk_window_set_title(GTK_WINDOW(pWindow), "GTK Plugin");
+  gtk_window_set_title(GTK_WINDOW(pWindow), pluginURI);
   gtk_container_add(GTK_CONTAINER(pWindow), plugWin);
   gtk_widget_show_all(pWindow);
   gtk_main();

@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "pluginManager.h"
+#include "uimanager.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -20,9 +21,12 @@ public:
 
 private Q_SLOTS:
     void updateListClicked();
+    void createUIClicked();
 
 private:
     void populatePluginList();
     Ui::MainWindow *ui;
+
+    UIManager _pluginUIManager;
 };
 #endif // MAINWINDOW_H
