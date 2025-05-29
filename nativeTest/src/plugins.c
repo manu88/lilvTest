@@ -8,7 +8,7 @@
 
 #ifdef MACOS
 #define LV2_PATH "/opt/homebrew/lib/lv2/"
-#else
+#elif defined(LINUX)
 #define LV2_PATH "/usr/local/lib/aarch64-linux-gnu/lv2"
 #endif
 

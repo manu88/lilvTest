@@ -5,7 +5,7 @@ LDFLAGS= `pkg-config --libs lilv-0` `pkg-config --libs gtk+-2.0` `pkg-config --l
 
 UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Linux)
-        CCFLAGS += -D LINUX
+        CPPFLAGS += -D LINUX
     endif
     ifeq ($(UNAME_S),Darwin)
         CPPFLAGS+= -D MACOS
