@@ -27,15 +27,15 @@ TEST_CPP = decompiler
 all: $(SOURCES) $(EXECUTABLE)
 
 %.o: %.c
-	CC -c $(CCFLAGS) $< -o $@
+	$(CC) -c $(CCFLAGS) $< -o $@
 
 ifeq ($(UNAME_S),Darwin)
 %.o: %.m
-	CC -c $(CCFLAGS) $< -o $@
+	$(CC) -c $(CCFLAGS) $< -o $@
 endif
 
 $(EXECUTABLE): $(OBJECTS)
-	CC $(OBJECTS) $(CCFLAGS) $(LDFLAGS) -o $(EXECUTABLE)
+	$(CC) $(OBJECTS) $(CCFLAGS) $(LDFLAGS) -o $(EXECUTABLE)
 
 clean:
 	rm -f $(OBJECTS)

@@ -13,6 +13,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+#ifdef LINUX
+// stub for linux, no need to do anything
+void platformPostFix(void) {}
+#endif
+
 #ifdef MACOS
 #define LV2_PATH "/opt/homebrew/lib/lv2/"
 #else
