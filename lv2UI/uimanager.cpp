@@ -15,9 +15,19 @@ UIManager::UIManager() {}
 bool UIManager::createInstanceFor(const LV2::Plugin::Description &desc){
 
     auto uiProcess = new QProcess();
+
+    QObject::connect(uiProcess, &QProcess::finished, this, &UIManager::finished);
+
     QStringList args;
     args << desc.uri;
     uiProcess->start(TESTUI_PATH, args);
 
     return false;
+}
+
+void UIManager::finished(int exitCode, QProcess::ExitStatus exitStatus /*= QProcess::NormalExit*/)
+{
+    qDebug("Process %s code %i",
+           (exitStatus == QProcess::NormalExit ? "finished" : "crashed"),
+           exitCode);
 }

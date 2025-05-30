@@ -11,6 +11,7 @@
 #include <serd/serd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef LINUX
 // stub for linux, no need to do anything
@@ -34,6 +35,7 @@ int main(int argc, char **argv) {
   const LilvPlugin *plug = plugins_get_plugin(&ctx, pluginURI);
   if (!plug) {
     perror("no such plugin");
+    plugins_ctx_release(&ctx);
     return 1;
   }
   assert(plug);
@@ -53,6 +55,12 @@ int main(int argc, char **argv) {
 
   const LilvUI *ui = NULL;
   LILV_API LilvUIs *uis = lilv_plugin_get_uis(plug);
+  if (uis == NULL) {
+    printf("This plugin does not provide a UI\n");
+    plugins_ctx_release(&ctx);
+    return 2;
+  }
+  printf("UIS %p\n", uis);
   LILV_FOREACH(uis, i, uis) {
     ui = lilv_uis_get(uis, i);
     const LilvNodes *uiClasses = lilv_ui_get_classes(ui);
@@ -107,7 +115,10 @@ int main(int argc, char **argv) {
   gtk_main();
   free(pluginNameNode);
 
-  suil_instance_free(uiInstance);
+  printf("Freeing SUIL instance\n");
+  // FIXME: crashes
+  // suil_instance_free(uiInstance);
+  printf("release plugins\n");
   plugins_ctx_release(&ctx);
   return 0;
 }
