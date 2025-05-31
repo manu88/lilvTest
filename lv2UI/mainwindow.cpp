@@ -25,6 +25,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->deleteUIButton, &QPushButton::clicked, this, &MainWindow::deleteUIInstanceClicked);
     LV2::Plugin::manager().refreshPlugins();
     populatePluginList();
+
+    connect(&_pluginUIManager,
+            &LV2::UI::Manager::instancesChanged,
+            this,
+            &MainWindow::updateUIInstanceList);
 }
 
 MainWindow::~MainWindow()

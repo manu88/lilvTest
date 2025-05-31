@@ -65,9 +65,11 @@ bool LV2::UI::Manager::createInstanceFor(const LV2::Plugin::Description &desc)
     instance._pid = pid;
     instance.fromHostFd = hostToAppFDS[0];
     instance.toHostFd = appToHostFDS[1];
+
+    instance.notifier = new QSocketNotifier(instance.fromHostFd, QSocketNotifier::Read);
+    connect(instance.notifier, &QSocketNotifier::activated, this, &LV2::UI::Manager::activated);
     _instances.append(instance);
 
-    waitForHelloMsg(instance);
     return true;
 }
 
@@ -79,6 +81,38 @@ bool LV2::UI::Manager::deleteInstance(const QString &uuid)
         }
     }
     return false;
+}
+
+void LV2::UI::Manager::activated(QSocketDescriptor socket, QSocketNotifier::Type type)
+{
+    for (auto &instance : _instances) {
+        if (instance.fromHostFd == (int) socket) {
+            if (type == QSocketNotifier::Read) {
+                canReadDataFrom(instance);
+            } else if (type == QSocketNotifier::Exception) {
+                instance.notifier->disconnect();
+            }
+            return;
+        }
+    }
+}
+
+void LV2::UI::Manager::canReadDataFrom(LV2::UI::Instance &instance)
+{
+    AppHostMsgFrame msgFrame;
+    ssize_t nBytes = read(instance.fromHostFd, &msgFrame, sizeof(AppHostMsgFrame));
+    if (nBytes == 0) { // EOF
+        qDebug("socket for %s is EoF", instance.uuid.toStdString().c_str());
+        instance.notifier->disconnect();
+        int removedCount = _instances.removeIf(
+            [&instance](const auto &r) { return r.uuid == instance.uuid; });
+        qDebug("remove %i instances matching %s", removedCount, instance.uuid.toStdString().c_str());
+        emit instancesChanged();
+        return;
+    }
+    qDebug("socket for %s is activated, can read %zi bytes",
+           instance.uuid.toStdString().c_str(),
+           nBytes);
 }
 
 bool LV2::UI::Manager::sendGoodbye(LV2::UI::Instance &instance)
