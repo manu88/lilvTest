@@ -10,24 +10,32 @@
 #error "unknown platform"
 #endif
 
-UIManager::UIManager() {}
+LV2::UI::Manager::Manager() {}
 
-bool UIManager::createInstanceFor(const LV2::Plugin::Description &desc){
+bool LV2::UI::Manager::createInstanceFor(const LV2::Plugin::Description &desc)
+{
+    auto uiProcess = LV2::UI::Instance();
+    uiProcess._process = new QProcess(this);
 
-    auto uiProcess = new QProcess();
-
-    QObject::connect(uiProcess, &QProcess::finished, this, &UIManager::finished);
+    connect(uiProcess._process, &QProcess::finished, this, &LV2::UI::Manager::finished);
+    connect(uiProcess._process, &QProcess::errorOccurred, this, &LV2::UI::Manager::errorOccurred);
 
     QStringList args;
     args << desc.uri;
-    uiProcess->start(TESTUI_PATH, args);
-
+    uiProcess._process->start(TESTUI_PATH, args);
+    //_instances.append(uiProcess);
     return false;
 }
 
-void UIManager::finished(int exitCode, QProcess::ExitStatus exitStatus /*= QProcess::NormalExit*/)
+void LV2::UI::Manager::finished(int exitCode,
+                                QProcess::ExitStatus exitStatus /*= QProcess::NormalExit*/)
 {
     qDebug("Process %s code %i",
            (exitStatus == QProcess::NormalExit ? "finished" : "crashed"),
            exitCode);
+}
+
+void LV2::UI::Manager::errorOccurred(QProcess::ProcessError error)
+{
+    qDebug("errorOccurred on process");
 }

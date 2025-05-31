@@ -27,6 +27,6 @@ private:
     void populatePluginList();
     Ui::MainWindow *ui;
 
-    UIManager _pluginUIManager;
+    LV2::UI::Manager _pluginUIManager;
 };
 #endif // MAINWINDOW_H
