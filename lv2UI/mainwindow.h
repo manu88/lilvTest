@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QListWidget>
 #include <QMainWindow>
 #include "uimanager.h"
 
@@ -21,9 +22,13 @@ public:
 private Q_SLOTS:
     void updateListClicked();
     void createUIClicked();
+    void uiInstanceListItemChanged(QListWidgetItem *item);
+    void deleteUIInstanceClicked();
 
 private:
+    void updateUIInstanceList();
     void populatePluginList();
+    void populateUIInstanceDescriptionFrameFrom(const LV2::UI::Instance &instance);
     Ui::MainWindow *ui;
 
     LV2::UI::Manager _pluginUIManager;

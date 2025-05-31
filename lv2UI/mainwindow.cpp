@@ -11,14 +11,20 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+    setWindowTitle("LV2 plugin explorer");
     ui->setupUi(this);
-
+    ui->deleteUIButton->setDisabled(true);
     connect(ui->refreshButton, &QToolButton::clicked, this, &MainWindow::updateListClicked);
     connect(ui->createUIButton, &QToolButton::clicked, this, &MainWindow::createUIClicked);
-    setWindowTitle("LV2 plugin explorer");
+
+    connect(ui->uiInstanceListWidget,
+            &QListWidget::itemClicked,
+            this,
+            &MainWindow::uiInstanceListItemChanged);
+
+    connect(ui->deleteUIButton, &QPushButton::clicked, this, &MainWindow::deleteUIInstanceClicked);
     LV2::Plugin::manager().refreshPlugins();
     populatePluginList();
-
 }
 
 MainWindow::~MainWindow()
@@ -40,7 +46,12 @@ void MainWindow::createUIClicked(){
     const auto pluginDesc =  LV2::Plugin::manager().getPlugins().at(pluginIndex.row());
     qDebug("plugin selected index %i : %s", pluginIndex.row(), pluginDesc.uri.toStdString().c_str());
 
-    _pluginUIManager.createInstanceFor(pluginDesc);
+    if (_pluginUIManager.createInstanceFor(pluginDesc)) {
+        updateUIInstanceList();
+        int index = _pluginUIManager.getInstances().size() - 1;
+        ui->uiInstanceListWidget->setCurrentRow(index);
+        populateUIInstanceDescriptionFrameFrom(_pluginUIManager.getInstances().at(index));
+    }
 }
 
 void MainWindow::populatePluginList()
@@ -125,4 +136,35 @@ void MainWindow::populatePluginList()
     for (int i = 0; i < numCols; i++) {
         ui->treeWidget->resizeColumnToContents(i);
     }
+}
+
+void MainWindow::updateUIInstanceList()
+{
+    ui->uiInstanceListWidget->clear();
+    for (const auto &instance : _pluginUIManager.getInstances()) {
+        new QListWidgetItem(instance.desc.name, ui->uiInstanceListWidget);
+    }
+}
+
+void MainWindow::uiInstanceListItemChanged(QListWidgetItem *item)
+{
+    int index = ui->uiInstanceListWidget->currentRow();
+    qDebug("item changed to %i", index);
+    auto instance = _pluginUIManager.getInstances().at(index);
+    populateUIInstanceDescriptionFrameFrom(instance);
+}
+
+void MainWindow::populateUIInstanceDescriptionFrameFrom(const LV2::UI::Instance &instance)
+{
+    ui->labelName->setText(instance.desc.name);
+    ui->labelUri->setText(instance.desc.uri);
+    ui->labelUIStatus->setText("some status");
+    ui->labelUUID->setText(instance.uuid);
+    ui->deleteUIButton->setDisabled(false);
+}
+
+void MainWindow::deleteUIInstanceClicked()
+{
+    auto instance = _pluginUIManager.getInstances().at(ui->uiInstanceListWidget->currentRow());
+    qDebug("delete instance %s", instance.desc.name.toStdString().c_str());
 }

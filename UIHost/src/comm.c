@@ -19,9 +19,9 @@ int CommContextSendHello(CommContext *ctx) {
     return 0;
   }
   AppHostMsgFrame msgFrame;
-  AppHostMsg_Hello helloMsg;
   msgFrame.header.msgSize = sizeof(AppHostMsg_Hello);
   msgFrame.header.type = AppHostMsgType_Hello;
+  AppHostMsg_Hello helloMsg;
   helloMsg.protocolVersion = HOST_PROTOCOL_VERSION;
 
   ssize_t nBytes = write(ctx->toHostFD, &msgFrame, sizeof(AppHostMsgFrame));
@@ -44,4 +44,5 @@ int CommContextSendHello(CommContext *ctx) {
       return 0;
     }
   }
+  return 1;
 }

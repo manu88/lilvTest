@@ -1,5 +1,6 @@
 #include "uimanager.h"
 #include <QProcess>
+#include <QUuid>
 #include "HostProtocol.h"
 #include <unistd.h> // fork
 // not very universal and multi-users right now :)
@@ -59,12 +60,35 @@ bool LV2::UI::Manager::createInstanceFor(const LV2::Plugin::Description &desc)
     qDebug("child process pid %i", pid);
 
     auto instance = LV2::UI::Instance();
+    instance.desc = desc;
+    instance.uuid = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces);
     instance._pid = pid;
     instance.fromHostFd = hostToAppFDS[0];
     instance.toHostFd = appToHostFDS[1];
     _instances.append(instance);
 
     waitForHelloMsg(instance);
+    return true;
+}
+
+bool LV2::UI::Manager::deleteInstance(const QString &uuid)
+{
+    for (auto &instance : _instances) {
+        if (instance.uuid == uuid) {
+            return sendGoodbye(instance);
+        }
+    }
+    return false;
+}
+
+bool LV2::UI::Manager::sendGoodbye(LV2::UI::Instance &instance)
+{
+    AppHostMsgFrame msgFrame;
+    msgFrame.header.msgSize = sizeof(AppHostMsg_Goodbye);
+    msgFrame.header.type = AppHostMsgType_Goodbye;
+    AppHostMsg_Goodbye msg;
+    write(instance.toHostFd, &msgFrame, sizeof(AppHostMsgFrame));
+    write(instance.toHostFd, &msg, sizeof(AppHostMsg_Goodbye));
     return true;
 }
 

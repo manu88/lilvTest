@@ -11,6 +11,7 @@ typedef enum {
 
   AppHostMsgType_Unknown = 0,
   AppHostMsgType_Hello = 1,
+  AppHostMsgType_Goodbye = 1,
 } AppHostMsgType;
 
 typedef struct {
@@ -27,6 +28,10 @@ typedef struct {
 typedef struct {
   uint32_t protocolVersion;
 } AppHostMsg_Hello;
+
+typedef struct {
+    uint32_t unused; // avoid size difference between C and C++
+} AppHostMsg_Goodbye;
 
 #ifdef __cplusplus
 }
