@@ -71,7 +71,7 @@ bool LV2::UI::Manager::createInstanceFor(const LV2::Plugin::Description &desc)
 static const int BSIZE = 100;
 static char buf[BSIZE];
 
-bool LV2::UI::Manager::waitForHelloMsg(const LV2::UI::Instance &instance)
+bool LV2::UI::Manager::waitForHelloMsg(LV2::UI::Instance &instance)
 {
     ssize_t nbytes = read(instance.fromHostFd, buf, sizeof(AppHostMsgFrame));
     qDebug("received %zi bytes", nbytes);
@@ -82,6 +82,8 @@ bool LV2::UI::Manager::waitForHelloMsg(const LV2::UI::Instance &instance)
         qDebug("received %zi bytes", nbytes);
         const AppHostMsg_Hello *helloMsg = (const AppHostMsg_Hello *) &buf;
         qDebug("host protocol = %i, App is %i\n", helloMsg->protocolVersion, HOST_PROTOCOL_VERSION);
+        instance._sentHello = true;
+        return true;
     }
     return false;
 }

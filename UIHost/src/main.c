@@ -1,4 +1,5 @@
 #include "HostProtocol.h"
+#include "comm.h"
 #include "osx_stuff.h"
 #include "plugins.h"
 #include "uri.h"
@@ -26,6 +27,7 @@ void platformPostFix(void) {}
 #endif
 
 static PluginsContext ctx;
+static CommContext commCtx;
 
 #define BSIZE 100
 static char buf[BSIZE];
@@ -42,18 +44,12 @@ int main(int argc, char **argv) {
   int toHostFD = (argc > 3) ? atoi(argv[3]) : -1;
   printf("fromHostFD=%i\n", fromHostFD);
   printf("toHostFD=%i\n", toHostFD);
-
+  CommContextInit(&commCtx, fromHostFD, toHostFD);
   // send hello msg
 
-  AppHostMsgFrame msgFrame;
-  AppHostMsg_Hello helloMsg;
-  msgFrame.header.msgSize = sizeof(AppHostMsg_Hello);
-  msgFrame.header.type = AppHostMsgType_Hello;
-  helloMsg.protocolVersion = HOST_PROTOCOL_VERSION;
-
-  write(toHostFD, &msgFrame, sizeof(AppHostMsgFrame));
-  write(toHostFD, &helloMsg, sizeof(AppHostMsg_Hello));
-
+  if (!CommContextSendHello(&commCtx)) {
+    printf("Error while sending Hello\n");
+  }
   plugins_ctx_init(&ctx);
   const LilvPlugin *plug = plugins_get_plugin(&ctx, pluginURI);
   if (!plug) {

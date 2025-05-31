@@ -28,9 +28,6 @@ typedef struct {
   uint32_t protocolVersion;
 } AppHostMsg_Hello;
 
-static inline uint32_t AppHostMsgFrame_GetSize(const AppHostMsgFrame *frame) {
-  return sizeof(AppHostMsgFrame) + frame->header.msgSize;
-}
 #ifdef __cplusplus
 }
 #endif

@@ -12,6 +12,7 @@ class Instance
     friend class LV2::UI::Manager;
 
 private:
+    bool _sentHello = false;
     pid_t _pid;
     int toHostFd = -1;
     int fromHostFd = -1;
@@ -23,7 +24,7 @@ public:
     bool createInstanceFor(const LV2::Plugin::Description &desc);
 
 private:
-    bool waitForHelloMsg(const Instance &instance);
+    bool waitForHelloMsg(Instance &instance);
     QList<Instance> _instances;
 };
 } // namespace UI

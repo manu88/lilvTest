@@ -1,7 +1,9 @@
 # Objective:
-Display any LV2 UI plugin in a Qt6 application. since LV2 plugins can use different UI libraries (gtk2, gtk3, x11, cocoa, etc.), it means some wrapping must occur.
+Display any LV2 UI plugin in a Qt6 application.
 
-This test project consists in two subprojects:
+since LV2 plugins can use different UI libraries (gtk2, gtk3, x11, cocoa, etc.), it means some wrapping must occur.
+
+This test project consists in two sub-projects:
 1. the main application, written in Qt6, uses `liblilv` to scan host plugins, show information and instantiate them. then
 2. a UIHost process is spawn and will take care of handling the display of the plugin UI.
 
@@ -11,7 +13,7 @@ Note that in the case where the plugin's UI matches the host configuration, the 
 ## things to install
 
 ```bash
-sudo apt install liblilv-dev 
+sudo apt install liblilv-dev libsuil-dev
 ```
 
 ## things to read
