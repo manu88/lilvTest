@@ -167,4 +167,5 @@ void MainWindow::deleteUIInstanceClicked()
 {
     auto instance = _pluginUIManager.getInstances().at(ui->uiInstanceListWidget->currentRow());
     qDebug("delete instance %s", instance.desc.name.toStdString().c_str());
+    _pluginUIManager.deleteInstance(instance.uuid);
 }

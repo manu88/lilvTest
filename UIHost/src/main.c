@@ -1,5 +1,6 @@
 #include "HostProtocol.h"
 #include "comm.h"
+#include "glib.h"
 #include "osx_stuff.h"
 #include "plugins.h"
 #include "uri.h"
@@ -45,11 +46,12 @@ int main(int argc, char **argv) {
   printf("fromHostFD=%i\n", fromHostFD);
   printf("toHostFD=%i\n", toHostFD);
   CommContextInit(&commCtx, fromHostFD, toHostFD);
-  // send hello msg
 
+  // send hello msg
   if (!CommContextSendHello(&commCtx)) {
     printf("Error while sending Hello\n");
   }
+
   plugins_ctx_init(&ctx);
   const LilvPlugin *plug = plugins_get_plugin(&ctx, pluginURI);
   if (!plug) {
@@ -64,7 +66,6 @@ int main(int argc, char **argv) {
 
   int newArgC = 1;
   char **newArgv = {(char **)&pluginName};
-
   gtk_init(&newArgC, &newArgv);
 
   printf("Create SUIL instance for '%s' '%s'\n", pluginURI, pluginName);
@@ -131,6 +132,10 @@ int main(int argc, char **argv) {
   gtk_widget_show_all(pWindow);
 
   platformPostFix();
+
+  GSource *source = CommContextCreateSource(&commCtx);
+  g_source_attach(source, NULL);
+
   gtk_main();
   free(pluginNameNode);
 

@@ -1,5 +1,7 @@
 #include "comm.h"
 #include "HostProtocol.h"
+#include "glib-unix.h"
+#include "glib.h"
 #include <stdio.h>
 #include <sys/_types/_ssize_t.h>
 #include <unistd.h>
@@ -45,4 +47,26 @@ int CommContextSendHello(CommContext *ctx) {
     }
   }
   return 1;
+}
+
+static gboolean onData(gint fd, GIOCondition condition, gpointer userData) {
+  CommContext *ctx = (CommContext *)userData;
+  AppHostMsgFrame frame;
+  ssize_t nBytes = read(ctx->fromHostFD, &frame, sizeof(AppHostMsgFrame));
+  
+  if (nBytes == sizeof(AppHostMsgFrame)) {
+    printf("Got a frame: type %i size %i\n", frame.header.type,
+           frame.header.msgSize);
+  }else{
+    printf("read %zi bytes from App\n", nBytes);
+  }
+  return TRUE;
+}
+
+GSource *CommContextCreateSource(CommContext *ctx) {
+  printf("Create GSource\n");
+  ctx->appSource = g_unix_fd_source_new(ctx->fromHostFD, G_IO_IN);
+  g_source_set_callback(ctx->appSource, (GSourceFunc)onData, ctx, NULL);
+
+  return ctx->appSource;
 }
