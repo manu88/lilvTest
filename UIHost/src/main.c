@@ -24,13 +24,32 @@ void platformPostFix(void) {}
 #define LV2_PATH "/usr/local/lib/aarch64-linux-gnu/lv2"
 #endif
 
-PluginsContext ctx;
+static PluginsContext ctx;
+
+static const int BSIZE = 100;
+static char buf[BSIZE];
 
 static void OnDestroy(GtkWidget *pWidget, gpointer pData) { gtk_main_quit(); }
 
 int main(int argc, char **argv) {
+  for (int i = 0; i < argc; i++) {
+    printf("args %i='%s'\n", i, argv[i]);
+  }
   char *pluginURI =
       argc > 1 ? argv[1] : "http://lv2plug.in/plugins/eg-scope#Stereo";
+  int fromHostFD = (argc > 2) ? atoi(argv[2]) : -1;
+  int toHostFD = (argc > 3) ? atoi(argv[3]) : -1;
+  printf("fromHostFD=%i\n", fromHostFD);
+  printf("toHostFD=%i\n", toHostFD);
+  if (fromHostFD != -1) {
+    ssize_t nbytes = read(fromHostFD, buf, BSIZE);
+    printf("read %zi from app\n", nbytes);
+    if (nbytes > 0) {
+      buf[nbytes] = 0;
+      printf("buffer : '%s'\n", buf);
+    }
+  }
+  write(toHostFD, "Hello world\n", 12);
   plugins_ctx_init(&ctx);
   const LilvPlugin *plug = plugins_get_plugin(&ctx, pluginURI);
   if (!plug) {

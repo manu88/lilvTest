@@ -1,6 +1,5 @@
 #pragma once
 #include <QList>
-#include <QProcess>
 #include "plugindescription.h"
 
 namespace LV2 {
@@ -8,29 +7,23 @@ namespace LV2 {
 namespace UI {
 
 class Manager;
-class Instance : public QObject
+class Instance
 {
-    Q_OBJECT
     friend class LV2::UI::Manager;
 
 private:
-    QProcess *_process;
+    pid_t _pid;
+    int toHostFd = -1;
+    int fromHostFd = -1;
 };
 
-class Manager : public QObject
+class Manager
 {
-    Q_OBJECT
 public:
-    Manager();
-
     bool createInstanceFor(const LV2::Plugin::Description &desc);
 
 private:
     QList<Instance> _instances;
-
-private Q_SLOTS:
-    void finished(int exitCode, QProcess::ExitStatus exitStatus = QProcess::NormalExit);
-    void errorOccurred(QProcess::ProcessError error);
 };
 } // namespace UI
 } // namespace LV2
