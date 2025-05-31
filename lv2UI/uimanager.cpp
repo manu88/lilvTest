@@ -1,7 +1,6 @@
 #include "uimanager.h"
 #include <QProcess>
 #include <QUuid>
-#include "HostProtocol.h"
 #include <unistd.h> // fork
 // not very universal and multi-users right now :)
 #ifdef Q_OS_LINUX
@@ -77,6 +76,7 @@ bool LV2::UI::Manager::deleteInstance(const QString &uuid)
 {
     for (auto &instance : _instances) {
         if (instance.uuid == uuid) {
+            instance._shouldBeDeleted = true;
             return sendGoodbye(instance);
         }
     }
@@ -99,8 +99,8 @@ void LV2::UI::Manager::activated(QSocketDescriptor socket, QSocketNotifier::Type
 
 void LV2::UI::Manager::canReadDataFrom(LV2::UI::Instance &instance)
 {
-    AppHostMsgFrame msgFrame;
-    ssize_t nBytes = read(instance.fromHostFd, &msgFrame, sizeof(AppHostMsgFrame));
+    AppHostHeader msgHeader;
+    ssize_t nBytes = read(instance.fromHostFd, &msgHeader, sizeof(AppHostHeader));
     if (nBytes == 0) { // EOF
         qDebug("socket for %s is EoF", instance.uuid.toStdString().c_str());
         instance.notifier->disconnect();
@@ -110,38 +110,40 @@ void LV2::UI::Manager::canReadDataFrom(LV2::UI::Instance &instance)
         emit instancesChanged();
         return;
     }
-    qDebug("socket for %s is activated, can read %zi bytes",
-           instance.uuid.toStdString().c_str(),
-           nBytes);
+    if (nBytes == sizeof(AppHostHeader)) {
+        qDebug("got header, type %i size %i", msgHeader.type, msgHeader.msgSize);
+        char buf[HOST_PROTOCOL_MAX_MSG_SIZE];
+        nBytes = read(instance.fromHostFd, buf, msgHeader.msgSize);
+        if (nBytes == msgHeader.msgSize) {
+            qDebug("got complete message type %i size %i", msgHeader.type, msgHeader.msgSize);
+            onMessageFrom(instance, &msgHeader, (const void *) buf);
+        }
+    }
+}
+
+void LV2::UI::Manager::onMessageFrom(LV2::UI::Instance &instance,
+                                     const AppHostHeader *header,
+                                     const void *data)
+{
+    switch (header->type) {
+    case AppHostMsgType_Hello: {
+        const AppHostMsg_Hello *msgHello = (const AppHostMsg_Hello *) data;
+        qDebug("host protocol = %i, App is %i\n", msgHello->protocolVersion, HOST_PROTOCOL_VERSION);
+        instance._sentHello = true;
+        break;
+    }
+    default:
+        break;
+    }
 }
 
 bool LV2::UI::Manager::sendGoodbye(LV2::UI::Instance &instance)
 {
-    AppHostMsgFrame msgFrame;
-    msgFrame.header.msgSize = sizeof(AppHostMsg_Goodbye);
-    msgFrame.header.type = AppHostMsgType_Goodbye;
+    AppHostHeader header;
+    header.msgSize = sizeof(AppHostMsg_Goodbye);
+    header.type = AppHostMsgType_Goodbye;
     AppHostMsg_Goodbye msg;
-    write(instance.toHostFd, &msgFrame, sizeof(AppHostMsgFrame));
+    write(instance.toHostFd, &header, sizeof(AppHostHeader));
     write(instance.toHostFd, &msg, sizeof(AppHostMsg_Goodbye));
     return true;
-}
-
-static const int BSIZE = 100;
-static char buf[BSIZE];
-
-bool LV2::UI::Manager::waitForHelloMsg(LV2::UI::Instance &instance)
-{
-    ssize_t nbytes = read(instance.fromHostFd, buf, sizeof(AppHostMsgFrame));
-    qDebug("received %zi bytes", nbytes);
-    const AppHostMsgFrame *recvFrame = (const AppHostMsgFrame *) &buf;
-    qDebug("received msg size = %i type=%i", recvFrame->header.msgSize, recvFrame->header.type);
-    if (recvFrame->header.type == AppHostMsgType_Hello) {
-        ssize_t nbytes = read(instance.fromHostFd, buf, recvFrame->header.msgSize);
-        qDebug("received %zi bytes", nbytes);
-        const AppHostMsg_Hello *helloMsg = (const AppHostMsg_Hello *) &buf;
-        qDebug("host protocol = %i, App is %i\n", helloMsg->protocolVersion, HOST_PROTOCOL_VERSION);
-        instance._sentHello = true;
-        return true;
-    }
-    return false;
 }

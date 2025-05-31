@@ -30,10 +30,16 @@ void platformPostFix(void) {}
 static PluginsContext ctx;
 static CommContext commCtx;
 
-#define BSIZE 100
-static char buf[BSIZE];
-
 static void OnDestroy(GtkWidget *pWidget, gpointer pData) { gtk_main_quit(); }
+
+static void onAppMsg(const AppHostHeader *header, const void *data) {
+  printf("Got complete message\n");
+  switch (header->type) {
+  case AppHostMsgType_Goodbye:
+    printf("Got goodbye\n");
+    gtk_main_quit();
+  }
+}
 
 int main(int argc, char **argv) {
   for (int i = 0; i < argc; i++) {
@@ -46,6 +52,7 @@ int main(int argc, char **argv) {
   printf("fromHostFD=%i\n", fromHostFD);
   printf("toHostFD=%i\n", toHostFD);
   CommContextInit(&commCtx, fromHostFD, toHostFD);
+  commCtx.onMsg = onAppMsg;
 
   // send hello msg
   if (!CommContextSendHello(&commCtx)) {

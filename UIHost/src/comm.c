@@ -1,12 +1,14 @@
 #include "comm.h"
-#include "HostProtocol.h"
 #include "glib-unix.h"
 #include "glib.h"
 #include <stdio.h>
+#include <string.h>
 #include <sys/_types/_ssize_t.h>
 #include <unistd.h>
 
 int CommContextInit(CommContext *ctx, int fromHostFD, int toHostFD) {
+  memset(ctx->buffer, 0, HOST_PROTOCOL_MAX_MSG_SIZE);
+  ctx->bufferIndex = 0;
   ctx->fromHostFD = fromHostFD;
   ctx->toHostFD = toHostFD;
   return 1;
@@ -20,19 +22,19 @@ int CommContextSendHello(CommContext *ctx) {
   if (!CommContextIsValid(ctx)) {
     return 0;
   }
-  AppHostMsgFrame msgFrame;
-  msgFrame.header.msgSize = sizeof(AppHostMsg_Hello);
-  msgFrame.header.type = AppHostMsgType_Hello;
+  AppHostHeader msgHeader;
+  msgHeader.msgSize = sizeof(AppHostMsg_Hello);
+  msgHeader.type = AppHostMsgType_Hello;
   AppHostMsg_Hello helloMsg;
   helloMsg.protocolVersion = HOST_PROTOCOL_VERSION;
 
-  ssize_t nBytes = write(ctx->toHostFD, &msgFrame, sizeof(AppHostMsgFrame));
-  if (nBytes != sizeof(AppHostMsgFrame)) {
+  ssize_t nBytes = write(ctx->toHostFD, &msgHeader, sizeof(AppHostHeader));
+  if (nBytes != sizeof(AppHostHeader)) {
     if (nBytes == -1) {
       perror("write msg frame");
       return 0;
     } else {
-      printf("Only wrote %zi/%zi msg frame\n", nBytes, sizeof(AppHostMsgFrame));
+      printf("Only wrote %zi/%zi msg frame\n", nBytes, sizeof(AppHostHeader));
       return 0;
     }
   }
@@ -51,14 +53,17 @@ int CommContextSendHello(CommContext *ctx) {
 
 static gboolean onData(gint fd, GIOCondition condition, gpointer userData) {
   CommContext *ctx = (CommContext *)userData;
-  AppHostMsgFrame frame;
-  ssize_t nBytes = read(ctx->fromHostFD, &frame, sizeof(AppHostMsgFrame));
-  
-  if (nBytes == sizeof(AppHostMsgFrame)) {
-    printf("Got a frame: type %i size %i\n", frame.header.type,
-           frame.header.msgSize);
-  }else{
-    printf("read %zi bytes from App\n", nBytes);
+  AppHostHeader header;
+  ssize_t nBytes = read(ctx->fromHostFD, &header, sizeof(AppHostHeader));
+
+  if (nBytes == sizeof(AppHostHeader)) {
+    printf("Got a frame: type %i size %i\n", header.type, header.msgSize);
+    nBytes = read(ctx->fromHostFD, ctx->buffer, header.msgSize);
+    if (nBytes == header.msgSize) {
+      ctx->onMsg(&header, ctx->buffer);
+    }
+  } else {
+    printf("read %zi bytes header from App\n", nBytes);
   }
   return TRUE;
 }

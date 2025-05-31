@@ -2,8 +2,8 @@
 #include <QList>
 #include <QObject>
 #include <QSocketNotifier>
+#include "HostProtocol.h"
 #include "plugindescription.h"
-
 namespace LV2 {
 
 namespace UI {
@@ -23,6 +23,8 @@ private:
     int toHostFd = -1;
     int fromHostFd = -1;
     QSocketNotifier *notifier;
+
+    bool _shouldBeDeleted = false;
 };
 
 class Manager : public QObject
@@ -41,8 +43,9 @@ private slots:
     void activated(QSocketDescriptor socket, QSocketNotifier::Type type);
 
 private:
+    void onMessageFrom(Instance &instance, const AppHostHeader *header, const void *data);
     void canReadDataFrom(Instance &instance);
-    bool waitForHelloMsg(Instance &instance);
+
     bool sendGoodbye(Instance &instance);
     QList<Instance> _instances;
 };

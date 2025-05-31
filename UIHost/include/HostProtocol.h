@@ -5,6 +5,8 @@ extern "C" {
 #endif
 #include <stdint.h>
 
+#define HOST_PROTOCOL_MAX_MSG_SIZE 100
+
 #define HOST_PROTOCOL_VERSION 1
 
 typedef enum {
@@ -17,20 +19,16 @@ typedef enum {
 typedef struct {
   uint32_t msgSize;
   uint32_t type;
-} AppHostHeader;
-
-typedef struct {
-  AppHostHeader header;
   // msg is just after will be a AppHostMsg_* struct, depending on
   // AppHostHeader.type
-} AppHostMsgFrame;
+} AppHostHeader;
 
 typedef struct {
   uint32_t protocolVersion;
 } AppHostMsg_Hello;
 
 typedef struct {
-    uint32_t unused; // avoid size difference between C and C++
+  uint32_t unused; // avoid size difference between C and C++
 } AppHostMsg_Goodbye;
 
 #ifdef __cplusplus
