@@ -1,16 +1,12 @@
 # Objective:
-Write a wrapper that will display LV2 UI's:
-the [LV2 UI specs](http://lv2plug.in/ns/extensions/ui) lists different UI classes, such as 
-Gtk3UI, Qt4UI, X11, etc.
+Display any LV2 UI plugin in a Qt6 application. since LV2 plugins can use different UI libraries (gtk2, gtk3, x11, cocoa, etc.), it means some wrapping must occur.
 
-Problem is: If creating a Qt host it will be impossible/very hard to embed the UI directly the app itself for at least 2 reasons:
-1. multiple versions of UI libs can not be used in the same process
-2. Most (recent) Linux distros use Wayland compositor, so we can't use X11 directly
+This test project consists in two subprojects:
+1. the main application, written in Qt6, uses `liblilv` to scan host plugins, show information and instantiate them. then
+2. a UIHost process is spawn and will take care of handling the display of the plugin UI.
 
+Note that in the case where the plugin's UI matches the host configuration, the main application should directly create the UI instance. This will also be the case if `suil` provides a wrapper widget to bridge the plugin UI type to the host type. 
 
-# Plan:
-On a Linux/Wayland distro, with the host written in Qt6:
-Use the lowest denominator possible for plugins -- X11 -- and use `xvf` or [this](https://lists.freedesktop.org/archives/wayland-devel/2023-November/043329.html) as a wrapper for all x11-based LV2 UI classes.
 
 ## things to install
 
