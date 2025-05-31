@@ -20,9 +20,7 @@ ifeq ($(UNAME_S),Darwin)
 OBJECTS+=$(filter %.o,$(SOURCES:.m=.o))
 endif
 
-EXECUTABLE= testUI
-TEST_EXEC = UnitTests
-TEST_CPP = decompiler
+EXECUTABLE= UIHost
 
 all: $(SOURCES) $(EXECUTABLE)
 
