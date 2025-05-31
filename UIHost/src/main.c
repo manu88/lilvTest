@@ -26,7 +26,7 @@ void platformPostFix(void) {}
 
 static PluginsContext ctx;
 
-static const int BSIZE = 100;
+#define BSIZE 100
 static char buf[BSIZE];
 
 static void OnDestroy(GtkWidget *pWidget, gpointer pData) { gtk_main_quit(); }
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
   const char *pluginName = lilv_node_as_string(pluginNameNode);
 
   int newArgC = 1;
-  char **newArgv = {(char **)&pluginName, NULL};
+  char **newArgv = {(char **)&pluginName};
 
   gtk_init(&newArgC, &newArgv);
 
