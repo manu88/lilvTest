@@ -1,2 +1,3 @@
 testUI
 compile_commands.json
+*.o
