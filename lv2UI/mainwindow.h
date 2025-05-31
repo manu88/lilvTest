@@ -2,7 +2,6 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "pluginManager.h"
 #include "uimanager.h"
 
 QT_BEGIN_NAMESPACE

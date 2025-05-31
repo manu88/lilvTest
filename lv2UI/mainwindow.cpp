@@ -5,6 +5,7 @@
 #include <QWidget>
 #include <QWindow>
 #include "./ui_mainwindow.h"
+#include "pluginManager.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
