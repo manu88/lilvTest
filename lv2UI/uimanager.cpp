@@ -1,7 +1,7 @@
 #include "uimanager.h"
 #include <QProcess>
+#include "HostProtocol.h"
 #include <unistd.h> // fork
-
 // not very universal and multi-users right now :)
 #ifdef Q_OS_LINUX
 #define TESTUI_PATH "/home/vboxuser/dev/testLV2/UIHost/UIHost"
@@ -62,12 +62,26 @@ bool LV2::UI::Manager::createInstanceFor(const LV2::Plugin::Description &desc)
     instance._pid = pid;
     instance.fromHostFd = hostToAppFDS[0];
     instance.toHostFd = appToHostFDS[1];
-    write(instance.toHostFd, "Hello world\n", 12);
-
-    static const int BSIZE = 100;
-    static char buf[BSIZE];
-    ssize_t nbytes = read(instance.fromHostFd, buf, BSIZE);
-    qDebug("received %zi bytes", nbytes);
     _instances.append(instance);
+
+    waitForHelloMsg(instance);
     return true;
+}
+
+static const int BSIZE = 100;
+static char buf[BSIZE];
+
+bool LV2::UI::Manager::waitForHelloMsg(const LV2::UI::Instance &instance)
+{
+    ssize_t nbytes = read(instance.fromHostFd, buf, sizeof(AppHostMsgFrame));
+    qDebug("received %zi bytes", nbytes);
+    const AppHostMsgFrame *recvFrame = (const AppHostMsgFrame *) &buf;
+    qDebug("received msg size = %i type=%i", recvFrame->header.msgSize, recvFrame->header.type);
+    if (recvFrame->header.type == AppHostMsgType_Hello) {
+        ssize_t nbytes = read(instance.fromHostFd, buf, recvFrame->header.msgSize);
+        qDebug("received %zi bytes", nbytes);
+        const AppHostMsg_Hello *helloMsg = (const AppHostMsg_Hello *) &buf;
+        qDebug("host protocol = %i, App is %i\n", helloMsg->protocolVersion, HOST_PROTOCOL_VERSION);
+    }
+    return false;
 }

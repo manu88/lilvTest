@@ -23,6 +23,7 @@ public:
     bool createInstanceFor(const LV2::Plugin::Description &desc);
 
 private:
+    bool waitForHelloMsg(const Instance &instance);
     QList<Instance> _instances;
 };
 } // namespace UI

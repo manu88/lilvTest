@@ -50,6 +50,7 @@ else()
 endif()
 
 target_link_libraries(lv2UI PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../UIHost/include/")
 
 if(APPLE)
   target_include_directories(lv2UI PUBLIC "/opt/homebrew/include/lilv-0/")
