@@ -2,7 +2,10 @@
 #include <QProcess>
 #include <QUuid>
 #include "pluginManager.h"
+#include <lv2/atom/atom.h>
+#include <lv2/atom/util.h>
 #include <unistd.h> // fork
+
 // not very universal and multi-users right now :)
 #ifdef Q_OS_LINUX
 #define TESTUI_PATH "/home/vboxuser/dev/testLV2/UIHost/UIHost"
@@ -155,10 +158,41 @@ void LV2::UI::Manager::onMessageFrom(LV2::UI::Instance &instance,
     }
     case AppHostMsgType_PortWriteRequest: {
         const AppHostMsg_PortWriteRequest *portWriteReq = (const AppHostMsg_PortWriteRequest *) data;
+        const char *buffer = (const char *) data + sizeof(AppHostMsg_PortWriteRequest);
         qDebug("port write request on port %i protocol %i size %i\n",
                portWriteReq->portIndex,
                portWriteReq->protocol,
                portWriteReq->bufferSize);
+
+        const QString protocolName = LV2::Plugin::manager().uriUnmap(portWriteReq->protocol);
+        qDebug("_suilPortWriteFunc on protocol %u '%s' port index %u",
+               portWriteReq->protocol,
+               protocolName.toStdString().c_str(),
+               portWriteReq->portIndex);
+
+        if (protocolName == LV2_ATOM__eventTransfer) {
+            qDebug("\tEvent transfer buffer size %u", portWriteReq->bufferSize);
+
+            const LV2_Atom_Object *obj = (const LV2_Atom_Object *) buffer;
+            LV2_ATOM_OBJECT_FOREACH(obj, iter)
+            {
+                const QString typeURI = LV2::Plugin::manager().uriUnmap(iter->value.type);
+
+                const QString keyURI = LV2::Plugin::manager().uriUnmap(iter->key);
+                qDebug("Key %i '%s' type %s",
+                       iter->key,
+                       keyURI.toStdString().c_str(),
+                       typeURI.toStdString().c_str());
+                if (keyURI == "http://lv2plug.in/plugins/eg-scope#ui-spp") {
+                    const LV2_Atom_Int *val = (const LV2_Atom_Int *) &iter->value;
+                    qDebug("val %i", val->body);
+                } else if (keyURI == "http://lv2plug.in/plugins/eg-scope#ui-amp") {
+                    const LV2_Atom_Float *val = (const LV2_Atom_Float *) &iter->value;
+                    qDebug("val %f", val->body);
+                }
+            }
+        }
+
         break;
     }
     default:

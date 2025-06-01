@@ -3,7 +3,6 @@
 #include "glib.h"
 #include "osx_stuff.h"
 #include "plugins.h"
-#include "uri.h"
 #include <assert.h>
 #include <cstdint>
 #include <gio/gio.h>
@@ -69,31 +68,6 @@ static void onSuilPortWrite(SuilController controller, uint32_t portIndex,
                             void const *buffer) {
   PluginsContext *ctx = (PluginsContext *)controller;
   CommContext_sendPortWrite(&commCtx, portIndex, bufferSize, protocol, buffer);
-#if 0
-  const char *protocolName = ctx->unMapFunction(&ctx->uri_table, protocol);
-  printf("_suilPortWriteFunc on protocol %u '%s' port index %u\n", protocol,
-         protocolName, portIndex);
-
-  if (strcmp(protocolName, LV2_ATOM__eventTransfer) == 0) {
-    printf("\tEvent transfer buffer size %u\n", bufferSize);
-
-    const LV2_Atom_Object *obj = (const LV2_Atom_Object *)buffer;
-    LV2_ATOM_OBJECT_FOREACH(obj, iter) {
-      const char *typeURI =
-          ctx->unMapFunction(&ctx->uri_table, iter->value.type);
-      const char *keyURI = ctx->unMapFunction(&ctx->uri_table, iter->key);
-      printf("Key %i '%s' type %s\n", iter->key, keyURI, typeURI);
-      if (strcmp(keyURI, "http://lv2plug.in/plugins/eg-scope#ui-spp") == 0) {
-        const LV2_Atom_Int *val = (const LV2_Atom_Int *)&iter->value;
-        printf("val %i\n", val->body);
-      } else if (strcmp(keyURI, "http://lv2plug.in/plugins/eg-scope#ui-amp") ==
-                 0) {
-        const LV2_Atom_Float *val = (const LV2_Atom_Float *)&iter->value;
-        printf("val %f\n", val->body);
-      }
-    }
-  }
-#endif
 }
 
 int main(int argc, char **argv) {
