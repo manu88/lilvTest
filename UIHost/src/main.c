@@ -4,7 +4,7 @@
 #include "osx_stuff.h"
 #include "plugins.h"
 #include "uri.h"
-#include <_string.h>
+#include <string.h>
 #include <assert.h>
 #include <gio/gio.h>
 #include <gtk/gtk.h>
@@ -12,12 +12,9 @@
 #include <lv2/atom/atom.h>
 #include <lv2/ui/ui.h>
 #include <lv2/urid/urid.h>
-#include <machine/limits.h>
 #include <serd/serd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/_types/_ssize_t.h>
 
 #ifdef LINUX
 // stub for linux, no need to do anything
