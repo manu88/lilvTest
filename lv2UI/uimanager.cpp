@@ -1,6 +1,7 @@
 #include "uimanager.h"
 #include <QProcess>
 #include <QUuid>
+#include "pluginManager.h"
 #include <unistd.h> // fork
 // not very universal and multi-users right now :)
 #ifdef Q_OS_LINUX
@@ -111,25 +112,45 @@ void LV2::UI::Manager::canReadDataFrom(LV2::UI::Instance &instance)
         return;
     }
     if (nBytes == sizeof(AppHostHeader)) {
-        qDebug("got header, type %i size %i", msgHeader.type, msgHeader.msgSize);
         char buf[HOST_PROTOCOL_MAX_MSG_SIZE];
         nBytes = read(instance.fromHostFd, buf, msgHeader.msgSize);
         if (nBytes == msgHeader.msgSize) {
-            qDebug("got complete message type %i size %i", msgHeader.type, msgHeader.msgSize);
-            onMessageFrom(instance, &msgHeader, (const void *) buf);
+            onMessageFrom(instance, &msgHeader, (void *) buf);
         }
     }
 }
 
 void LV2::UI::Manager::onMessageFrom(LV2::UI::Instance &instance,
                                      const AppHostHeader *header,
-                                     const void *data)
+                                     void *data)
 {
     switch (header->type) {
     case AppHostMsgType_Hello: {
         const AppHostMsg_Hello *msgHello = (const AppHostMsg_Hello *) data;
-        qDebug("host protocol = %i, App is %i\n", msgHello->protocolVersion, HOST_PROTOCOL_VERSION);
         instance._sentHello = true;
+        break;
+    }
+    case AppHostMsgType_URIDMapRequest: {
+        AppHostMsg_URIDMapRequest *mapRequest = (AppHostMsg_URIDMapRequest *) data;
+        uint32_t urid = LV2::Plugin::manager().uriMap(mapRequest->uri);
+
+        AppHostHeader headerReply;
+        headerReply.type = AppHostMsgType_URIDMapReply;
+        headerReply.msgSize = sizeof(AppHostMsg_URIDMapReply);
+        write(instance.toHostFd, &headerReply, sizeof(AppHostHeader));
+        AppHostMsg_URIDMapReply reply;
+        reply.urid = urid;
+        write(instance.toHostFd, &reply, sizeof(AppHostMsg_URIDMapReply));
+        break;
+    }
+    case AppHostMsgType_URIDUnMapRequest: {
+        AppHostMsg_URIDUnMapRequest *unmapRequest = (AppHostMsg_URIDUnMapRequest *) data;
+        QString uri = LV2::Plugin::manager().uriUnmap(unmapRequest->urid);
+        AppHostHeader headerReply;
+        headerReply.type = AppHostMsgType_URIDUnMapReply;
+        headerReply.msgSize = uri.length() + 1;
+        write(instance.toHostFd, &headerReply, sizeof(AppHostHeader));
+        write(instance.toHostFd, uri.toStdString().c_str(), headerReply.msgSize);
         break;
     }
     default:

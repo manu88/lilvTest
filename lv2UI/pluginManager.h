@@ -25,9 +25,8 @@ namespace LV2{
 
             Instance instantiate(const Description &desc);
 
-
-            LV2_URID uriMap(const char* uri);
-            const char *uriUnmap(LV2_URID val);
+            LV2_URID uriMap(const QString &uri);
+            QString uriUnmap(LV2_URID val);
 
             static LV2_URID doUriMap(LV2_URID_Map_Handle handle, const char* uri);
         protected:

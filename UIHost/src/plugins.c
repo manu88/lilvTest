@@ -150,7 +150,7 @@ static void _suilPortWriteFunc(SuilController controller, uint32_t port_index,
                                uint32_t buffer_size, uint32_t protocol,
                                void const *buffer) {
   PluginsContext *ctx = (PluginsContext *)controller;
-  const char *protocolName = uri_table_unmap(&ctx->uri_table, protocol);
+  const char *protocolName = ctx->unMapFunction(&ctx->uri_table, protocol);
   printf("_suilPortWriteFunc on protocol %u '%s' port index %u\n", protocol,
          protocolName, port_index);
 
@@ -159,8 +159,9 @@ static void _suilPortWriteFunc(SuilController controller, uint32_t port_index,
 
     const LV2_Atom_Object *obj = (const LV2_Atom_Object *)buffer;
     LV2_ATOM_OBJECT_FOREACH(obj, iter) {
-      const char *typeURI = uri_table_unmap(&ctx->uri_table, iter->value.type);
-      const char *keyURI = uri_table_unmap(&ctx->uri_table, iter->key);
+      const char *typeURI =
+          ctx->unMapFunction(&ctx->uri_table, iter->value.type);
+      const char *keyURI = ctx->unMapFunction(&ctx->uri_table, iter->key);
       printf("Key %i '%s' type %s\n", iter->key, keyURI, typeURI);
       if (strcmp(keyURI, "http://lv2plug.in/plugins/eg-scope#ui-spp") == 0) {
         const LV2_Atom_Int *val = (const LV2_Atom_Int *)&iter->value;

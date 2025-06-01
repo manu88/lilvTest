@@ -219,11 +219,12 @@ LV2::Plugin::Instance LV2::Plugin::Manager::instantiate(const LV2::Plugin::Descr
     return ret;
 }
 
-LV2_URID LV2::Plugin::Manager::uriMap(const char* uri){
+LV2_URID LV2::Plugin::Manager::uriMap(const QString &uri)
+{
     return _uriMap.map(uri);
 }
 
-const char *LV2::Plugin::Manager::uriUnmap(LV2_URID val)
+QString LV2::Plugin::Manager::uriUnmap(LV2_URID val)
 {
     return _uriMap.unMap(val);
 }

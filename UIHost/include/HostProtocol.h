@@ -14,6 +14,12 @@ typedef enum {
   AppHostMsgType_Unknown = 0,
   AppHostMsgType_Hello = 1,
   AppHostMsgType_Goodbye = 1,
+
+  AppHostMsgType_URIDMapRequest = 2,
+  AppHostMsgType_URIDMapReply = 3,
+
+  AppHostMsgType_URIDUnMapRequest = 4,
+  AppHostMsgType_URIDUnMapReply = 5,
 } AppHostMsgType;
 
 typedef struct {
@@ -30,6 +36,22 @@ typedef struct {
 typedef struct {
   uint32_t unused; // avoid size difference between C and C++
 } AppHostMsg_Goodbye;
+
+typedef struct {
+  char uri[HOST_PROTOCOL_MAX_MSG_SIZE];
+} AppHostMsg_URIDMapRequest;
+
+typedef struct {
+  uint32_t urid;
+} AppHostMsg_URIDMapReply;
+
+typedef struct {
+  uint32_t urid;
+} AppHostMsg_URIDUnMapRequest;
+
+typedef struct {
+  char uri[HOST_PROTOCOL_MAX_MSG_SIZE];
+} AppHostMsg_URIDUnMapReply;
 
 #ifdef __cplusplus
 }

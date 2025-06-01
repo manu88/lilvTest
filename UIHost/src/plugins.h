@@ -3,10 +3,14 @@
 #include <lilv/lilv.h>
 #include <suil/suil.h>
 
+typedef const char *(*UnMapFunction)(LV2_URID_Map_Handle handle, LV2_URID urid);
+
 typedef struct {
   LilvWorld *world;
   URITable uri_table;
   SuilHost *host;
+
+  UnMapFunction unMapFunction;
 } PluginsContext;
 
 void plugins_ctx_init(PluginsContext *ctx);

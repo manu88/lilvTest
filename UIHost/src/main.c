@@ -4,6 +4,7 @@
 #include "osx_stuff.h"
 #include "plugins.h"
 #include "uri.h"
+#include <_string.h>
 #include <assert.h>
 #include <gio/gio.h>
 #include <gtk/gtk.h>
@@ -11,10 +12,12 @@
 #include <lv2/atom/atom.h>
 #include <lv2/ui/ui.h>
 #include <lv2/urid/urid.h>
+#include <machine/limits.h>
 #include <serd/serd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/_types/_ssize_t.h>
 
 #ifdef LINUX
 // stub for linux, no need to do anything
@@ -41,7 +44,91 @@ static void onAppMsg(const AppHostHeader *header, const void *data) {
   }
 }
 
+static LV2_URID rpcURI_Map(LV2_URID_Map_Handle handle, const char *uri) {
+  // uri_table_map(&ctx.uri_table, uri);
+  AppHostHeader msgHeader;
+  msgHeader.msgSize = strlen(uri) + 1; // include NULL byte
+  assert(msgHeader.msgSize < HOST_PROTOCOL_MAX_MSG_SIZE);
+  msgHeader.type = AppHostMsgType_URIDMapRequest;
+  ssize_t nBytes = write(commCtx.toHostFD, &msgHeader, sizeof(AppHostHeader));
+  if (nBytes != sizeof(AppHostHeader)) {
+    printf("Only send %zi bytes of header instead of %zi\n", nBytes,
+           sizeof(AppHostHeader));
+  }
+  nBytes = write(commCtx.toHostFD, uri, msgHeader.msgSize);
+  if (nBytes != msgHeader.msgSize) {
+    printf("Only send %zi bytes of data instead of %i \n", nBytes,
+           msgHeader.msgSize);
+  }
+
+  // read reply
+  msgHeader.msgSize = 0;
+  msgHeader.type = 0;
+  nBytes = read(commCtx.fromHostFD, &msgHeader, sizeof(AppHostHeader));
+  if (nBytes != sizeof(AppHostHeader)) {
+    printf("Only read %zi bytes of header instead of %zi\n", nBytes,
+           sizeof(AppHostHeader));
+  }
+  assert(msgHeader.type == AppHostMsgType_URIDMapReply);
+  AppHostMsg_URIDMapReply reply;
+  nBytes = read(commCtx.fromHostFD, &reply, sizeof(AppHostMsg_URIDMapReply));
+  if (nBytes != sizeof(AppHostMsg_URIDMapReply)) {
+    printf("Only read %zi bytes of data instead of %zi\n", nBytes,
+           sizeof(AppHostMsg_URIDMapReply));
+  }
+  return reply.urid;
+}
+
+static const char *rpcURI_UnMap(LV2_URID_Map_Handle handle, LV2_URID urid) {
+  AppHostHeader msgHeader;
+  msgHeader.msgSize = sizeof(AppHostMsg_URIDUnMapRequest);
+  msgHeader.type = AppHostMsgType_URIDUnMapRequest;
+  ssize_t nBytes = write(commCtx.toHostFD, &msgHeader, sizeof(AppHostHeader));
+  if (nBytes != sizeof(AppHostHeader)) {
+    if (nBytes == -1) {
+      perror("rpcURI_UnMap.header");
+    }
+    printf("Only send %zi bytes of header instead of %zi\n", nBytes,
+           sizeof(AppHostHeader));
+  }
+  AppHostMsg_URIDUnMapRequest msg;
+  msg.urid = urid;
+  nBytes = write(commCtx.toHostFD, &msg, sizeof(AppHostMsg_URIDUnMapRequest));
+  if (nBytes != sizeof(AppHostMsg_URIDUnMapRequest)) {
+    if (nBytes == -1) {
+      perror("rpcURI_UnMap.msg");
+    }
+    printf("Only read %zi bytes of data instead of %zi\n", nBytes,
+           sizeof(AppHostMsg_URIDUnMapRequest));
+  }
+  // read reply
+  msgHeader.msgSize = 0;
+  msgHeader.type = 0;
+  nBytes = read(commCtx.fromHostFD, &msgHeader, sizeof(AppHostHeader));
+  if (nBytes != sizeof(AppHostHeader)) {
+    if (nBytes == -1) {
+      perror("rpcUnURIMap.header");
+    }
+    printf("Only read %zi bytes of header instead of %zi\n", nBytes,
+           sizeof(AppHostHeader));
+  }
+  assert(msgHeader.type == AppHostMsgType_URIDUnMapReply);
+  assert(msgHeader.msgSize < HOST_PROTOCOL_MAX_MSG_SIZE);
+  AppHostMsg_URIDUnMapReply reply;
+  nBytes = read(commCtx.fromHostFD, &reply, sizeof(AppHostMsg_URIDUnMapReply));
+  if (nBytes != sizeof(AppHostMsg_URIDUnMapReply)) {
+    if (nBytes == -1) {
+      perror("rpcUnURIMap.body");
+    }
+    printf("Only read %zi bytes of data instead of %zi\n", nBytes,
+           sizeof(AppHostMsg_URIDUnMapReply));
+  }
+  return strdup(reply.uri); // FIXME: leak!
+}
+
 int main(int argc, char **argv) {
+  setbuf(stdout, NULL);
+  setbuf(stderr, NULL);
   for (int i = 0; i < argc; i++) {
     printf("args %i='%s'\n", i, argv[i]);
   }
@@ -60,6 +147,7 @@ int main(int argc, char **argv) {
   }
 
   plugins_ctx_init(&ctx);
+  ctx.unMapFunction = rpcURI_UnMap;
   const LilvPlugin *plug = plugins_get_plugin(&ctx, pluginURI);
   if (!plug) {
     perror("no such plugin");
@@ -106,8 +194,8 @@ int main(int argc, char **argv) {
          lilv_node_as_string(bundleURINode));
 
   LV2_URID_Map mapHandle;
-  mapHandle.map = uri_table_map;
-  mapHandle.handle = &ctx.uri_table;
+  mapHandle.map = rpcURI_Map;
+  mapHandle.handle = &ctx;
   LV2_Feature feat;
   feat.URI = LV2_URID__map;
   feat.data = &mapHandle;
