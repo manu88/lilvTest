@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/_types/_ssize_t.h>
 #include <unistd.h>
 
 int CommContextInit(CommContext *ctx, int fromHostFD, int toHostFD) {
