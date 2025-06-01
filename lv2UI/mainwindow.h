@@ -26,6 +26,7 @@ private Q_SLOTS:
     void deleteUIInstanceClicked();
 
 private:
+    void closeEvent(QCloseEvent *event) override;
     void updateUIInstanceList();
     void populatePluginList();
     void populateUIInstanceDescriptionFrameFrom(const LV2::UI::Instance &instance);

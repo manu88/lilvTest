@@ -47,6 +47,7 @@ namespace LV2{
                 bool optional = false;
                 QVector<ScalePoint> scalePoints;
             };
+            bool hasUI() const { return !uis.empty(); }
 
             QString name;
             QString uri;

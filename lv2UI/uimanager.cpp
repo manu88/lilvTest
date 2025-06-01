@@ -17,6 +17,30 @@
 
 bool LV2::UI::Manager::createInstanceFor(const LV2::Plugin::Description &desc)
 {
+    if (!desc.hasUI()) {
+        qDebug("plugin %s has no UI", desc.name.toStdString().c_str());
+        return false;
+    }
+    for (const auto &ui : desc.uis) {
+        if (ui.isNative) {
+            return createNativeInstanceFor(desc, ui);
+        }
+    }
+    return createUIHostInstanceFor(desc);
+}
+
+bool LV2::UI::Manager::createNativeInstanceFor(const LV2::Plugin::Description &desc,
+                                               const LV2::Plugin::Description::UI &ui)
+{
+    qDebug("create native UI instance for %s using %s",
+           desc.name.toStdString().c_str(),
+           ui.uiType.toStdString().c_str());
+    return false;
+}
+
+bool LV2::UI::Manager::createUIHostInstanceFor(const LV2::Plugin::Description &desc)
+{
+    qDebug("create UIHost UI instance for %s using ", desc.name.toStdString().c_str());
     int err = 0;
     int appToHostFDS[2];
     err = pipe(appToHostFDS);
@@ -80,11 +104,19 @@ bool LV2::UI::Manager::deleteInstance(const QString &uuid)
 {
     for (auto &instance : _instances) {
         if (instance.uuid == uuid) {
-            instance._shouldBeDeleted = true;
+            // will be removed from _instances when EOF is received on socket
             return sendGoodbye(instance);
         }
     }
     return false;
+}
+
+void LV2::UI::Manager::cleanup()
+{
+    qDebug("UI::Manager::cleanup");
+    for (auto &instance : _instances) {
+        sendGoodbye(instance);
+    }
 }
 
 void LV2::UI::Manager::activated(QSocketDescriptor socket, QSocketNotifier::Type type)
@@ -202,6 +234,7 @@ void LV2::UI::Manager::onMessageFrom(LV2::UI::Instance &instance,
 
 bool LV2::UI::Manager::sendGoodbye(LV2::UI::Instance &instance)
 {
+    qDebug("send goodbye to %s", instance.uuid.toStdString().c_str());
     AppHostHeader header;
     header.msgSize = sizeof(AppHostMsg_Goodbye);
     header.type = AppHostMsgType_Goodbye;

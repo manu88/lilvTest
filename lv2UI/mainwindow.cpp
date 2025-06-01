@@ -175,3 +175,10 @@ void MainWindow::deleteUIInstanceClicked()
     qDebug("delete instance %s", instance.desc.name.toStdString().c_str());
     _pluginUIManager.deleteInstance(instance.uuid);
 }
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    qDebug("quit app");
+    _pluginUIManager.cleanup();
+    QMainWindow::closeEvent(event);
+}

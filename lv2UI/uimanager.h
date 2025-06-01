@@ -23,8 +23,6 @@ private:
     int toHostFd = -1;
     int fromHostFd = -1;
     QSocketNotifier *notifier;
-
-    bool _shouldBeDeleted = false;
 };
 
 class Manager : public QObject
@@ -33,6 +31,7 @@ class Manager : public QObject
 public:
     bool createInstanceFor(const LV2::Plugin::Description &desc);
     bool deleteInstance(const QString &uuid);
+    void cleanup();
 
     const QList<Instance> getInstances() const { return _instances; }
 
@@ -43,6 +42,9 @@ private slots:
     void activated(QSocketDescriptor socket, QSocketNotifier::Type type);
 
 private:
+    bool createUIHostInstanceFor(const LV2::Plugin::Description &desc);
+    bool createNativeInstanceFor(const LV2::Plugin::Description &desc,
+                                 const LV2::Plugin::Description::UI &ui);
     void onMessageFrom(Instance &instance, const AppHostHeader *header, const void *data);
     void canReadDataFrom(Instance &instance);
 
