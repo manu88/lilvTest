@@ -1,4 +1,4 @@
-CXXFLAGS= -g -stdlib=libc++ `pkg-config --cflags lilv-0` `pkg-config --cflags suil-0` `pkg-config --cflags gtk+-2.0` `pkg-config --cflags serd-0`
+CXXFLAGS= -g -std=c++11 `pkg-config --cflags lilv-0` `pkg-config --cflags suil-0` `pkg-config --cflags gtk+-2.0` `pkg-config --cflags serd-0`
 CXXFLAGS += -Iinclude/
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
