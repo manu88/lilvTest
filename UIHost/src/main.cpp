@@ -99,17 +99,13 @@ static void onSuilPortWrite(SuilController controller, uint32_t portIndex,
 int main(int argc, char **argv) {
   setbuf(stdout, NULL);
   setbuf(stderr, NULL);
-  for (int i = 0; i < argc; i++) {
-    printf("args %i='%s'\n", i, argv[i]);
-  }
+
   const char *pluginURI =
       argc > 1 ? argv[1] : "http://lv2plug.in/plugins/eg-scope#Stereo";
 
   int fromHostFD = (argc > 2) ? atoi(argv[2]) : -1;
   int toHostFD = (argc > 3) ? atoi(argv[3]) : -1;
 
-  printf("fromHostFD=%i\n", fromHostFD);
-  printf("toHostFD=%i\n", toHostFD);
   CommContextInit(&commCtx, fromHostFD, toHostFD);
   commCtx.onMsg = onAppMsg;
 
@@ -136,8 +132,6 @@ int main(int argc, char **argv) {
   char **newArgv = {(char **)&pluginName};
   gtk_init(&newArgC, &newArgv);
 
-  printf("Create SUIL instance for '%s' '%s'\n", pluginURI, pluginName);
-
   const LilvNode *binaryURINode = NULL;
   const LilvNode *bundleURINode = NULL;
 
@@ -148,7 +142,6 @@ int main(int argc, char **argv) {
     plugins_ctx_release(&ctx);
     return 2;
   }
-  printf("UIS %p\n", uis);
   LILV_FOREACH(uis, i, uis) {
     ui = lilv_uis_get(uis, i);
     const LilvNodes *uiClasses = lilv_ui_get_classes(ui);
@@ -162,9 +155,6 @@ int main(int argc, char **argv) {
     break;
   }
   free(uis);
-  printf("binary URI= '%s'  bundle URI='%s'\n",
-         lilv_node_as_string(binaryURINode),
-         lilv_node_as_string(bundleURINode));
 
   LV2_URID_Map mapHandle;
   mapHandle.map = rpcURI_Map;
