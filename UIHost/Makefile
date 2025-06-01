@@ -1,4 +1,4 @@
-CXXFLAGS= -g -std=c++11 `pkg-config --cflags lilv-0` `pkg-config --cflags suil-0` `pkg-config --cflags gtk+-2.0` `pkg-config --cflags serd-0`
+CXXFLAGS= -g `pkg-config --cflags lilv-0` `pkg-config --cflags suil-0` `pkg-config --cflags gtk+-2.0` `pkg-config --cflags serd-0`
 CXXFLAGS += -Iinclude/
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
@@ -25,7 +25,7 @@ EXECUTABLE= UIHost
 all: $(SOURCES) $(EXECUTABLE)
 
 %.o: %.cpp
-	$(CXX) -c $(CXXFLAGS) $< -o $@
+	$(CXX) -c -std=c++11 $(CXXFLAGS) $< -o $@
 
 ifeq ($(UNAME_S),Darwin)
 %.o: %.m

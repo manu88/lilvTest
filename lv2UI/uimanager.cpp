@@ -122,7 +122,7 @@ void LV2::UI::Manager::canReadDataFrom(LV2::UI::Instance &instance)
 
 void LV2::UI::Manager::onMessageFrom(LV2::UI::Instance &instance,
                                      const AppHostHeader *header,
-                                     void *data)
+                                     const void *data)
 {
     switch (header->type) {
     case AppHostMsgType_Hello: {
@@ -144,13 +144,21 @@ void LV2::UI::Manager::onMessageFrom(LV2::UI::Instance &instance,
         break;
     }
     case AppHostMsgType_URIDUnMapRequest: {
-        AppHostMsg_URIDUnMapRequest *unmapRequest = (AppHostMsg_URIDUnMapRequest *) data;
+        const AppHostMsg_URIDUnMapRequest *unmapRequest = (AppHostMsg_URIDUnMapRequest *) data;
         QString uri = LV2::Plugin::manager().uriUnmap(unmapRequest->urid);
         AppHostHeader headerReply;
         headerReply.type = AppHostMsgType_URIDUnMapReply;
         headerReply.msgSize = uri.length() + 1;
         write(instance.toHostFd, &headerReply, sizeof(AppHostHeader));
         write(instance.toHostFd, uri.toStdString().c_str(), headerReply.msgSize);
+        break;
+    }
+    case AppHostMsgType_PortWriteRequest: {
+        const AppHostMsg_PortWriteRequest *portWriteReq = (const AppHostMsg_PortWriteRequest *) data;
+        qDebug("port write request on port %i protocol %i size %i\n",
+               portWriteReq->portIndex,
+               portWriteReq->protocol,
+               portWriteReq->bufferSize);
         break;
     }
     default:

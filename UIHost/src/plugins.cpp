@@ -4,7 +4,9 @@
 #include <lilv/lilv.h>
 #include <lv2/atom/atom.h>
 #include <lv2/atom/util.h>
+#include <lv2/ui/ui.h>
 #include <lv2/urid/urid.h>
+#include <serd/serd.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -150,29 +152,7 @@ static void _suilPortWriteFunc(SuilController controller, uint32_t port_index,
                                uint32_t buffer_size, uint32_t protocol,
                                void const *buffer) {
   PluginsContext *ctx = (PluginsContext *)controller;
-  const char *protocolName = ctx->unMapFunction(&ctx->uri_table, protocol);
-  printf("_suilPortWriteFunc on protocol %u '%s' port index %u\n", protocol,
-         protocolName, port_index);
-
-  if (strcmp(protocolName, LV2_ATOM__eventTransfer) == 0) {
-    printf("\tEvent transfer buffer size %u\n", buffer_size);
-
-    const LV2_Atom_Object *obj = (const LV2_Atom_Object *)buffer;
-    LV2_ATOM_OBJECT_FOREACH(obj, iter) {
-      const char *typeURI =
-          ctx->unMapFunction(&ctx->uri_table, iter->value.type);
-      const char *keyURI = ctx->unMapFunction(&ctx->uri_table, iter->key);
-      printf("Key %i '%s' type %s\n", iter->key, keyURI, typeURI);
-      if (strcmp(keyURI, "http://lv2plug.in/plugins/eg-scope#ui-spp") == 0) {
-        const LV2_Atom_Int *val = (const LV2_Atom_Int *)&iter->value;
-        printf("val %i\n", val->body);
-      } else if (strcmp(keyURI, "http://lv2plug.in/plugins/eg-scope#ui-amp") ==
-                 0) {
-        const LV2_Atom_Float *val = (const LV2_Atom_Float *)&iter->value;
-        printf("val %f\n", val->body);
-      }
-    }
-  }
+  ctx->portWriteFunction(controller, port_index, buffer_size, protocol, buffer);
 }
 
 static uint32_t _suilPortIndexFunc(SuilController controller,
@@ -193,4 +173,24 @@ static uint32_t _suilPortUnsubscribeFunc(SuilController controller,
                                          const LV2_Feature *const *features) {
   printf("_suilPortUnsubscribeFunc on protocol %u\n", protocol);
   return 0;
+}
+
+SuilInstance *plugins_CreateInstance(PluginsContext *ctx,
+                                     const LilvPlugin *plug, const LilvUI *ui,
+                                     const LV2_Feature *const *features) {
+  const char *bundle_uri = lilv_node_as_uri(lilv_ui_get_bundle_uri(ui));
+  const char *binary_uri = lilv_node_as_uri(lilv_ui_get_binary_uri(ui));
+  const char *bundle_path =
+      (const char *)serd_file_uri_parse((const uint8_t *)bundle_uri, NULL);
+  const char *binary_path =
+      (const char *)serd_file_uri_parse((const uint8_t *)binary_uri, NULL);
+  SuilInstance *uiInstance =
+      suil_instance_new(ctx->host, ctx, LV2_UI__GtkUI,
+                        lilv_node_as_uri(lilv_plugin_get_uri(plug)),
+                        lilv_node_as_uri(lilv_ui_get_uri(ui)), LV2_UI__GtkUI,
+                        bundle_path, binary_path, features);
+
+  serd_free((void *)bundle_path);
+  serd_free((void *)binary_path);
+  return uiInstance;
 }

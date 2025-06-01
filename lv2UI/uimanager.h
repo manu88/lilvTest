@@ -43,7 +43,7 @@ private slots:
     void activated(QSocketDescriptor socket, QSocketNotifier::Type type);
 
 private:
-    void onMessageFrom(Instance &instance, const AppHostHeader *header, void *data);
+    void onMessageFrom(Instance &instance, const AppHostHeader *header, const void *data);
     void canReadDataFrom(Instance &instance);
 
     bool sendGoodbye(Instance &instance);

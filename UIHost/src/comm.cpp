@@ -1,10 +1,12 @@
 #include "comm.h"
+#include "HostProtocol.h"
 #include "glib-unix.h"
 #include "glib.h"
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdint.h>
+#include <sys/_types/_ssize_t.h>
 #include <unistd.h>
 
 int CommContextInit(CommContext *ctx, int fromHostFD, int toHostFD) {
@@ -120,7 +122,7 @@ char *CommContext_UnmapRequest(CommContext *ctx, uint32_t urid) {
     if (nBytes == -1) {
       perror("rpcURI_UnMap.header");
     }
-    printf("Only send %zi bytes of header instead of %zi\n", nBytes,
+    printf("Only wrote %zi bytes of header instead of %zi\n", nBytes,
            sizeof(AppHostHeader));
   }
   AppHostMsg_URIDUnMapRequest msg;
@@ -130,7 +132,7 @@ char *CommContext_UnmapRequest(CommContext *ctx, uint32_t urid) {
     if (nBytes == -1) {
       perror("rpcURI_UnMap.msg");
     }
-    printf("Only read %zi bytes of data instead of %zi\n", nBytes,
+    printf("Only wrote %zi bytes of data instead of %zi\n", nBytes,
            sizeof(AppHostMsg_URIDUnMapRequest));
   }
   // read reply
@@ -156,4 +158,43 @@ char *CommContext_UnmapRequest(CommContext *ctx, uint32_t urid) {
            sizeof(AppHostMsg_URIDUnMapReply));
   }
   return strdup(reply.uri); // FIXME: leak!
+}
+
+void CommContext_sendPortWrite(CommContext *ctx, uint32_t portIndex,
+                               uint32_t bufferSize, uint32_t protocol,
+                               void const *buffer) {
+  AppHostHeader msgHeader;
+  msgHeader.msgSize = sizeof(AppHostMsg_PortWriteRequest) + bufferSize;
+  msgHeader.type = AppHostMsgType_PortWriteRequest;
+  assert(msgHeader.msgSize < HOST_PROTOCOL_MAX_MSG_SIZE);
+
+  ssize_t nBytes = write(ctx->toHostFD, &msgHeader, sizeof(AppHostHeader));
+  if (nBytes != sizeof(AppHostHeader)) {
+    if (nBytes == -1) {
+      perror("CommContext_sendPortWrite.header");
+    }
+    printf("Only wrote %zi bytes of data instead of %zi\n", nBytes,
+           sizeof(AppHostHeader));
+  }
+
+  AppHostMsg_PortWriteRequest msg;
+  msg.portIndex = portIndex;
+  msg.bufferSize = bufferSize;
+  msg.protocol = protocol;
+  nBytes = write(ctx->toHostFD, &msg, sizeof(AppHostMsg_PortWriteRequest));
+  if (nBytes != sizeof(AppHostMsg_PortWriteRequest)) {
+    if (nBytes == -1) {
+      perror("CommContext_sendPortWrite.msg");
+    }
+    printf("Only wrote %zi bytes of data instead of %zi\n", nBytes,
+           sizeof(AppHostMsg_PortWriteRequest));
+  }
+
+  nBytes = write(ctx->toHostFD, buffer, bufferSize);
+  if (nBytes != bufferSize) {
+    if (nBytes == -1) {
+      perror("CommContext_sendPortWrite.buffer");
+    }
+    printf("Only wrote %zi bytes of data instead of %u\n", nBytes, bufferSize);
+  }
 }

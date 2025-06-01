@@ -10,6 +10,7 @@
 #include <gtk/gtk.h>
 #include <lilv/lilv.h>
 #include <lv2/atom/atom.h>
+#include <lv2/atom/util.h>
 #include <lv2/ui/ui.h>
 #include <lv2/urid/urid.h>
 #include <map>
@@ -34,6 +35,10 @@ static CommContext commCtx;
 
 static std::map<uint32_t, std::string> _unmapStash;
 
+static void onSuilPortWrite(SuilController controller, uint32_t port_index,
+                            uint32_t buffer_size, uint32_t protocol,
+                            void const *buffer);
+
 static void OnDestroy(GtkWidget *pWidget, gpointer pData) { gtk_main_quit(); }
 
 static void onAppMsg(const AppHostHeader *header, const void *data) {
@@ -46,7 +51,6 @@ static void onAppMsg(const AppHostHeader *header, const void *data) {
 }
 
 static LV2_URID rpcURI_Map(LV2_URID_Map_Handle handle, const char *uri) {
-  printf("rpcURI_Map request for '%s'\n", uri);
   LV2_URID ret = CommContext_MapRequest(&commCtx, uri);
   _unmapStash[ret] = uri;
   return ret;
@@ -58,6 +62,38 @@ static const char *rpcURI_UnMap(LV2_URID_Map_Handle handle, LV2_URID urid) {
   }
   printf("rpcURI_UnMap request for %i\n", urid);
   return CommContext_UnmapRequest(&commCtx, urid);
+}
+
+static void onSuilPortWrite(SuilController controller, uint32_t portIndex,
+                            uint32_t bufferSize, uint32_t protocol,
+                            void const *buffer) {
+  PluginsContext *ctx = (PluginsContext *)controller;
+  CommContext_sendPortWrite(&commCtx, portIndex, bufferSize, protocol, buffer);
+#if 0
+  const char *protocolName = ctx->unMapFunction(&ctx->uri_table, protocol);
+  printf("_suilPortWriteFunc on protocol %u '%s' port index %u\n", protocol,
+         protocolName, portIndex);
+
+  if (strcmp(protocolName, LV2_ATOM__eventTransfer) == 0) {
+    printf("\tEvent transfer buffer size %u\n", bufferSize);
+
+    const LV2_Atom_Object *obj = (const LV2_Atom_Object *)buffer;
+    LV2_ATOM_OBJECT_FOREACH(obj, iter) {
+      const char *typeURI =
+          ctx->unMapFunction(&ctx->uri_table, iter->value.type);
+      const char *keyURI = ctx->unMapFunction(&ctx->uri_table, iter->key);
+      printf("Key %i '%s' type %s\n", iter->key, keyURI, typeURI);
+      if (strcmp(keyURI, "http://lv2plug.in/plugins/eg-scope#ui-spp") == 0) {
+        const LV2_Atom_Int *val = (const LV2_Atom_Int *)&iter->value;
+        printf("val %i\n", val->body);
+      } else if (strcmp(keyURI, "http://lv2plug.in/plugins/eg-scope#ui-amp") ==
+                 0) {
+        const LV2_Atom_Float *val = (const LV2_Atom_Float *)&iter->value;
+        printf("val %f\n", val->body);
+      }
+    }
+  }
+#endif
 }
 
 int main(int argc, char **argv) {
@@ -84,6 +120,7 @@ int main(int argc, char **argv) {
 
   plugins_ctx_init(&ctx);
   ctx.unMapFunction = rpcURI_UnMap;
+  ctx.portWriteFunction = onSuilPortWrite;
   const LilvPlugin *plug = plugins_get_plugin(&ctx, pluginURI);
   if (!plug) {
     perror("no such plugin");
@@ -137,19 +174,9 @@ int main(int argc, char **argv) {
   feat.data = &mapHandle;
   const LV2_Feature *const features[2] = {&feat, NULL};
 
-  const char *bundle_uri = lilv_node_as_uri(lilv_ui_get_bundle_uri(ui));
-  const char *binary_uri = lilv_node_as_uri(lilv_ui_get_binary_uri(ui));
-  const char *bundle_path =
-      (const char *)serd_file_uri_parse((const uint8_t *)bundle_uri, NULL);
-  const char *binary_path =
-      (const char *)serd_file_uri_parse((const uint8_t *)binary_uri, NULL);
-
   g_application_new(pluginName, G_APPLICATION_DEFAULT_FLAGS);
-  SuilInstance *uiInstance =
-      suil_instance_new(ctx.host, &ctx, LV2_UI__GtkUI,
-                        lilv_node_as_uri(lilv_plugin_get_uri(plug)),
-                        lilv_node_as_uri(lilv_ui_get_uri(ui)), LV2_UI__GtkUI,
-                        bundle_path, binary_path, features);
+
+  SuilInstance *uiInstance = plugins_CreateInstance(&ctx, plug, ui, features);
   assert(uiInstance);
 
   GtkWidget *plugWin = (GtkWidget *)suil_instance_get_widget(uiInstance);

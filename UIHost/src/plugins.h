@@ -11,6 +11,7 @@ typedef struct {
   SuilHost *host;
 
   UnMapFunction unMapFunction;
+  SuilPortWriteFunc portWriteFunction;
 } PluginsContext;
 
 void plugins_ctx_init(PluginsContext *ctx);
@@ -20,3 +21,7 @@ void plugins_print_info(PluginsContext *ctx, const LilvPlugin *p);
 void plugins_print_all(PluginsContext *ctx);
 
 const LilvPlugin *plugins_get_plugin(PluginsContext *ctx, const char *uri);
+
+SuilInstance *plugins_CreateInstance(PluginsContext *ctx,
+                                     const LilvPlugin *plug, const LilvUI *ui,
+                                     const LV2_Feature *const *features);

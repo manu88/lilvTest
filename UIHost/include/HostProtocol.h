@@ -20,6 +20,9 @@ typedef enum {
 
   AppHostMsgType_URIDUnMapRequest = 4,
   AppHostMsgType_URIDUnMapReply = 5,
+
+  AppHostMsgType_PortWriteRequest = 6,
+
 } AppHostMsgType;
 
 typedef struct {
@@ -52,6 +55,13 @@ typedef struct {
 typedef struct {
   char uri[HOST_PROTOCOL_MAX_MSG_SIZE];
 } AppHostMsg_URIDUnMapReply;
+
+typedef struct {
+  uint32_t portIndex;
+  uint32_t bufferSize;
+  uint32_t protocol;
+  // void const *buffer
+} AppHostMsg_PortWriteRequest;
 
 #ifdef __cplusplus
 }
