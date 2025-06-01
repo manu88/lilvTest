@@ -45,85 +45,14 @@ static void onAppMsg(const AppHostHeader *header, const void *data) {
 }
 
 static LV2_URID rpcURI_Map(LV2_URID_Map_Handle handle, const char *uri) {
+  printf("rpcURI_Map request for '%s'\n", uri);
   // uri_table_map(&ctx.uri_table, uri);
-  AppHostHeader msgHeader;
-  msgHeader.msgSize = strlen(uri) + 1; // include NULL byte
-  assert(msgHeader.msgSize < HOST_PROTOCOL_MAX_MSG_SIZE);
-  msgHeader.type = AppHostMsgType_URIDMapRequest;
-  ssize_t nBytes = write(commCtx.toHostFD, &msgHeader, sizeof(AppHostHeader));
-  if (nBytes != sizeof(AppHostHeader)) {
-    printf("Only send %zi bytes of header instead of %zi\n", nBytes,
-           sizeof(AppHostHeader));
-  }
-  nBytes = write(commCtx.toHostFD, uri, msgHeader.msgSize);
-  if (nBytes != msgHeader.msgSize) {
-    printf("Only send %zi bytes of data instead of %i \n", nBytes,
-           msgHeader.msgSize);
-  }
-
-  // read reply
-  msgHeader.msgSize = 0;
-  msgHeader.type = 0;
-  nBytes = read(commCtx.fromHostFD, &msgHeader, sizeof(AppHostHeader));
-  if (nBytes != sizeof(AppHostHeader)) {
-    printf("Only read %zi bytes of header instead of %zi\n", nBytes,
-           sizeof(AppHostHeader));
-  }
-  assert(msgHeader.type == AppHostMsgType_URIDMapReply);
-  AppHostMsg_URIDMapReply reply;
-  nBytes = read(commCtx.fromHostFD, &reply, sizeof(AppHostMsg_URIDMapReply));
-  if (nBytes != sizeof(AppHostMsg_URIDMapReply)) {
-    printf("Only read %zi bytes of data instead of %zi\n", nBytes,
-           sizeof(AppHostMsg_URIDMapReply));
-  }
-  return reply.urid;
+  return CommContext_MapRequest(&commCtx, uri);
 }
 
 static const char *rpcURI_UnMap(LV2_URID_Map_Handle handle, LV2_URID urid) {
-  AppHostHeader msgHeader;
-  msgHeader.msgSize = sizeof(AppHostMsg_URIDUnMapRequest);
-  msgHeader.type = AppHostMsgType_URIDUnMapRequest;
-  ssize_t nBytes = write(commCtx.toHostFD, &msgHeader, sizeof(AppHostHeader));
-  if (nBytes != sizeof(AppHostHeader)) {
-    if (nBytes == -1) {
-      perror("rpcURI_UnMap.header");
-    }
-    printf("Only send %zi bytes of header instead of %zi\n", nBytes,
-           sizeof(AppHostHeader));
-  }
-  AppHostMsg_URIDUnMapRequest msg;
-  msg.urid = urid;
-  nBytes = write(commCtx.toHostFD, &msg, sizeof(AppHostMsg_URIDUnMapRequest));
-  if (nBytes != sizeof(AppHostMsg_URIDUnMapRequest)) {
-    if (nBytes == -1) {
-      perror("rpcURI_UnMap.msg");
-    }
-    printf("Only read %zi bytes of data instead of %zi\n", nBytes,
-           sizeof(AppHostMsg_URIDUnMapRequest));
-  }
-  // read reply
-  msgHeader.msgSize = 0;
-  msgHeader.type = 0;
-  nBytes = read(commCtx.fromHostFD, &msgHeader, sizeof(AppHostHeader));
-  if (nBytes != sizeof(AppHostHeader)) {
-    if (nBytes == -1) {
-      perror("rpcUnURIMap.header");
-    }
-    printf("Only read %zi bytes of header instead of %zi\n", nBytes,
-           sizeof(AppHostHeader));
-  }
-  assert(msgHeader.type == AppHostMsgType_URIDUnMapReply);
-  assert(msgHeader.msgSize < HOST_PROTOCOL_MAX_MSG_SIZE);
-  AppHostMsg_URIDUnMapReply reply;
-  nBytes = read(commCtx.fromHostFD, &reply, sizeof(AppHostMsg_URIDUnMapReply));
-  if (nBytes != sizeof(AppHostMsg_URIDUnMapReply)) {
-    if (nBytes == -1) {
-      perror("rpcUnURIMap.body");
-    }
-    printf("Only read %zi bytes of data instead of %zi\n", nBytes,
-           sizeof(AppHostMsg_URIDUnMapReply));
-  }
-  return strdup(reply.uri); // FIXME: leak!
+  printf("rpcURI_UnMap request for %i\n", urid);
+  return CommContext_UnmapRequest(&commCtx, urid);
 }
 
 int main(int argc, char **argv) {
