@@ -34,7 +34,7 @@ LV2::Plugin::Manager::Manager()
     _portConnectionOptionalURI = lilv_new_uri(_world, LV2_CORE__connectionOptional);
     _hostType = lilv_new_uri(_world, LV2_UI__Qt6UI);
 #ifdef Q_OS_LINUX
-    _nativeType = lilv_new_uri(_world, LV2_UI__X11UI);
+    _nativeUIType = lilv_new_uri(_world, LV2_UI__X11UI);
 #elif defined(Q_OS_MACOS)
     _nativeUIType = lilv_new_uri(_world, LV2_UI__CocoaUI);
 #endif
