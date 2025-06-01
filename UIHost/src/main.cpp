@@ -5,15 +5,18 @@
 #include "plugins.h"
 #include "uri.h"
 #include <assert.h>
+#include <cstdint>
 #include <gio/gio.h>
 #include <gtk/gtk.h>
 #include <lilv/lilv.h>
 #include <lv2/atom/atom.h>
 #include <lv2/ui/ui.h>
 #include <lv2/urid/urid.h>
+#include <map>
 #include <serd/serd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 
 #ifdef LINUX
 // stub for linux, no need to do anything
@@ -29,6 +32,8 @@ void platformPostFix(void) {}
 static PluginsContext ctx;
 static CommContext commCtx;
 
+static std::map<uint32_t, std::string> _unmapStash;
+
 static void OnDestroy(GtkWidget *pWidget, gpointer pData) { gtk_main_quit(); }
 
 static void onAppMsg(const AppHostHeader *header, const void *data) {
@@ -42,11 +47,15 @@ static void onAppMsg(const AppHostHeader *header, const void *data) {
 
 static LV2_URID rpcURI_Map(LV2_URID_Map_Handle handle, const char *uri) {
   printf("rpcURI_Map request for '%s'\n", uri);
-  // uri_table_map(&ctx.uri_table, uri);
-  return CommContext_MapRequest(&commCtx, uri);
+  LV2_URID ret = CommContext_MapRequest(&commCtx, uri);
+  _unmapStash[ret] = uri;
+  return ret;
 }
 
 static const char *rpcURI_UnMap(LV2_URID_Map_Handle handle, LV2_URID urid) {
+  if (_unmapStash.count(urid)) {
+    return _unmapStash[urid].c_str();
+  }
   printf("rpcURI_UnMap request for %i\n", urid);
   return CommContext_UnmapRequest(&commCtx, urid);
 }
@@ -59,8 +68,10 @@ int main(int argc, char **argv) {
   }
   const char *pluginURI =
       argc > 1 ? argv[1] : "http://lv2plug.in/plugins/eg-scope#Stereo";
+
   int fromHostFD = (argc > 2) ? atoi(argv[2]) : -1;
   int toHostFD = (argc > 3) ? atoi(argv[3]) : -1;
+
   printf("fromHostFD=%i\n", fromHostFD);
   printf("toHostFD=%i\n", toHostFD);
   CommContextInit(&commCtx, fromHostFD, toHostFD);
