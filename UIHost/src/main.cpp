@@ -4,7 +4,6 @@
 #include "osx_stuff.h"
 #include "plugins.h"
 #include "uri.h"
-#include <string.h>
 #include <assert.h>
 #include <gio/gio.h>
 #include <gtk/gtk.h>
@@ -58,7 +57,7 @@ int main(int argc, char **argv) {
   for (int i = 0; i < argc; i++) {
     printf("args %i='%s'\n", i, argv[i]);
   }
-  char *pluginURI =
+  const char *pluginURI =
       argc > 1 ? argv[1] : "http://lv2plug.in/plugins/eg-scope#Stereo";
   int fromHostFD = (argc > 2) ? atoi(argv[2]) : -1;
   int toHostFD = (argc > 3) ? atoi(argv[3]) : -1;
