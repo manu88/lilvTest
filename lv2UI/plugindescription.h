@@ -13,7 +13,8 @@ namespace LV2{
                 friend class Manager;
                 friend class UIHost;
                 QString uri;
-                QString nativeUIType;
+                QString uiType;
+                bool isNative = false;
 
             private:
                 const LilvUI* _ptr;

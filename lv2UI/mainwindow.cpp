@@ -128,7 +128,8 @@ void MainWindow::populatePluginList()
             pluginWidget->addChild(uisWidget);
             for (auto const &ui : p.uis) {
                 QTreeWidgetItem *uiWidget = new QTreeWidgetItem();
-                uiWidget->setText(0, ui.nativeUIType);
+                QString txt = ui.uiType + (ui.isNative ? " (native)" : "");
+                uiWidget->setText(0, txt);
                 uiWidget->setText(1, ui.uri);
                 uisWidget->addChild(uiWidget);
             }

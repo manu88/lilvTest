@@ -39,6 +39,7 @@ namespace LV2{
             LilvWorld *_world = nullptr;
             LilvNode *_portConnectionOptionalURI;
             LilvNode* _hostType;
+            LilvNode *_nativeUIType;
 
             QList<Description> _plugins;
             URIMap _uriMap;
