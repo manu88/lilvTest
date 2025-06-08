@@ -120,9 +120,9 @@
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="labelUIStatus">
+          <widget class="QLabel" name="labelUIType">
            <property name="text">
-            <string>status: </string>
+            <string>type: </string>
            </property>
           </widget>
          </item>
@@ -146,7 +146,7 @@
      <x>0</x>
      <y>0</y>
      <width>820</width>
-     <height>24</height>
+     <height>37</height>
     </rect>
    </property>
   </widget>

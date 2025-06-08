@@ -29,7 +29,7 @@ private:
     void closeEvent(QCloseEvent *event) override;
     void updateUIInstanceList();
     void populatePluginList();
-    void populateUIInstanceDescriptionFrameFrom(const LV2::UI::Instance &instance);
+    void populateUIInstanceDescriptionFrameFrom(const LV2::UI::Instance *instance);
     Ui::MainWindow *ui;
 
     LV2::UI::Manager _pluginUIManager;

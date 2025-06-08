@@ -4,14 +4,17 @@
 #include <lilv/lilv.h>
 
 namespace LV2{
+namespace UI {
+class Manager;
+};
     namespace Plugin{
         struct Description{
             friend class Manager;
-            friend class UIHost;
+            friend class LV2::UI::Manager;
 
             struct UI{
                 friend class Manager;
-                friend class UIHost;
+                friend class LV2::UI::Manager;
                 QString uri;
                 QString uiType;
                 bool isNative = false;

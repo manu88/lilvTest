@@ -4,18 +4,40 @@
 #include <QSocketNotifier>
 #include "HostProtocol.h"
 #include "plugindescription.h"
+#include <suil/suil.h>
+
 namespace LV2 {
 
 namespace UI {
 
 class Manager;
+
 class Instance
+{
+public:
+    enum class Type : int {
+        Native,
+        Foreign,
+    };
+    virtual ~Instance() {}
+    LV2::Plugin::Description desc;
+    QString uuid;
+    Type type;
+
+protected:
+    Instance(Type type)
+        : type(type)
+    {}
+};
+
+class ForeignInstance : public Instance
 {
     friend class LV2::UI::Manager;
 
 public:
-    LV2::Plugin::Description desc;
-    QString uuid;
+    ForeignInstance()
+        : Instance(Type::Foreign)
+    {}
 
 private:
     bool _sentHello = false;
@@ -25,15 +47,24 @@ private:
     QSocketNotifier *notifier;
 };
 
+class NativeInstance : public Instance
+{
+public:
+    NativeInstance()
+        : Instance(Type::Native)
+    {}
+};
+
 class Manager : public QObject
 {
     Q_OBJECT
 public:
+    Manager();
     bool createInstanceFor(const LV2::Plugin::Description &desc);
     bool deleteInstance(const QString &uuid);
     void cleanup();
 
-    const QList<Instance> getInstances() const { return _instances; }
+    const QList<Instance *> getInstances() const { return _instances; }
 
 signals:
     void instancesChanged();
@@ -42,14 +73,17 @@ private slots:
     void activated(QSocketDescriptor socket, QSocketNotifier::Type type);
 
 private:
-    bool createUIHostInstanceFor(const LV2::Plugin::Description &desc);
-    bool createNativeInstanceFor(const LV2::Plugin::Description &desc,
-                                 const LV2::Plugin::Description::UI &ui);
-    void onMessageFrom(Instance &instance, const AppHostHeader *header, const void *data);
-    void canReadDataFrom(Instance &instance);
+    Instance *createUIHostInstanceFor(const LV2::Plugin::Description &desc);
+    Instance *createNativeInstanceFor(const LV2::Plugin::Description &desc,
+                                      const LV2::Plugin::Description::UI &ui);
+    void onMessageFrom(ForeignInstance *instance, const AppHostHeader *header, const void *data);
+    void canReadDataFrom(ForeignInstance *instance);
 
-    bool sendGoodbye(Instance &instance);
-    QList<Instance> _instances;
+    bool deleteNativeInstance(NativeInstance *instance);
+    bool sendGoodbye(ForeignInstance *instance);
+    QList<Instance *> _instances;
+
+    SuilHost *_host;
 };
 } // namespace UI
 } // namespace LV2

@@ -148,7 +148,7 @@ void MainWindow::updateUIInstanceList()
 {
     ui->uiInstanceListWidget->clear();
     for (const auto &instance : _pluginUIManager.getInstances()) {
-        new QListWidgetItem(instance.desc.name, ui->uiInstanceListWidget);
+        new QListWidgetItem(instance->desc.name, ui->uiInstanceListWidget);
     }
 }
 
@@ -160,20 +160,25 @@ void MainWindow::uiInstanceListItemChanged(QListWidgetItem *item)
     populateUIInstanceDescriptionFrameFrom(instance);
 }
 
-void MainWindow::populateUIInstanceDescriptionFrameFrom(const LV2::UI::Instance &instance)
+void MainWindow::populateUIInstanceDescriptionFrameFrom(const LV2::UI::Instance *instance)
 {
-    ui->labelName->setText(instance.desc.name);
-    ui->labelUri->setText(instance.desc.uri);
-    ui->labelUIStatus->setText("some status");
-    ui->labelUUID->setText(instance.uuid);
+    ui->labelName->setText(instance->desc.name);
+    ui->labelUri->setText(instance->desc.uri);
+    ui->labelUIType->setText(instance->type == LV2::UI::Instance::Type::Foreign ? "foreign"
+                                                                                : "native");
+    ui->labelUUID->setText(instance->uuid);
     ui->deleteUIButton->setDisabled(false);
 }
 
 void MainWindow::deleteUIInstanceClicked()
 {
-    auto instance = _pluginUIManager.getInstances().at(ui->uiInstanceListWidget->currentRow());
-    qDebug("delete instance %s", instance.desc.name.toStdString().c_str());
-    _pluginUIManager.deleteInstance(instance.uuid);
+    auto index = ui->uiInstanceListWidget->currentRow();
+    if (index == -1 || index >= _pluginUIManager.getInstances().size()) {
+        return;
+    }
+    auto instance = _pluginUIManager.getInstances().at(index);
+    qDebug("delete instance %s", instance->desc.name.toStdString().c_str());
+    _pluginUIManager.deleteInstance(instance->uuid);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

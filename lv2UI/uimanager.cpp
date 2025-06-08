@@ -4,6 +4,7 @@
 #include "pluginManager.h"
 #include <lv2/atom/atom.h>
 #include <lv2/atom/util.h>
+#include <serd/serd.h>
 #include <unistd.h> // fork
 
 // not very universal and multi-users right now :)
@@ -15,30 +16,99 @@
 #error "unknown platform"
 #endif
 
+static void _SuilPortWriteFunc(SuilController controller,
+                               uint32_t port_index,
+                               uint32_t buffer_size,
+                               uint32_t protocol,
+                               void const *buffer)
+{}
+
+static uint32_t _SuilPortIndexFunc(SuilController controller, const char *port_symbol)
+{
+    return 0;
+}
+
+static uint32_t _SuilPortSubscribeFunc(SuilController controller,
+                                       uint32_t port_index,
+                                       uint32_t protocol,
+                                       const LV2_Feature *const *features)
+{
+    return 0;
+}
+
+static uint32_t _SuilPortUnsubscribeFunc(SuilController controller,
+                                         uint32_t port_index,
+                                         uint32_t protocol,
+                                         const LV2_Feature *const *features)
+{
+    return 0;
+}
+
+LV2::UI::Manager::Manager()
+{
+    _host = suil_host_new(_SuilPortWriteFunc,
+                          _SuilPortIndexFunc,
+                          _SuilPortSubscribeFunc,
+                          _SuilPortUnsubscribeFunc);
+}
+
 bool LV2::UI::Manager::createInstanceFor(const LV2::Plugin::Description &desc)
 {
     if (!desc.hasUI()) {
         qDebug("plugin %s has no UI", desc.name.toStdString().c_str());
         return false;
     }
+
+    Instance *instance = nullptr;
     for (const auto &ui : desc.uis) {
         if (ui.isNative) {
-            return createNativeInstanceFor(desc, ui);
+            instance = createNativeInstanceFor(desc, ui);
+            if (instance) {
+                break;
+            }
         }
     }
-    return createUIHostInstanceFor(desc);
+    if (instance == nullptr) {
+        instance = createUIHostInstanceFor(desc);
+    }
+    if (instance == nullptr) {
+        return false;
+    }
+    instance->desc = desc;
+    instance->uuid = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces);
+    _instances.append(instance);
+    return true;
 }
 
-bool LV2::UI::Manager::createNativeInstanceFor(const LV2::Plugin::Description &desc,
-                                               const LV2::Plugin::Description::UI &ui)
+LV2::UI::Instance *LV2::UI::Manager::createNativeInstanceFor(const LV2::Plugin::Description &desc,
+                                                             const LV2::Plugin::Description::UI &ui)
 {
     qDebug("create native UI instance for %s using %s",
            desc.name.toStdString().c_str(),
            ui.uiType.toStdString().c_str());
-    return false;
+#if 0
+    const char *bundle_uri = lilv_node_as_uri(lilv_ui_get_bundle_uri(ui._ptr));
+    const char *binary_uri = lilv_node_as_uri(lilv_ui_get_binary_uri(ui._ptr));
+    const char *bundle_path = (const char *) serd_file_uri_parse((const uint8_t *) bundle_uri, NULL);
+    const char *binary_path = (const char *) serd_file_uri_parse((const uint8_t *) binary_uri, NULL);
+    SuilInstance *uiInstance = suil_instance_new(_host,
+                                                 this,
+                                                 LV2_UI__GtkUI,
+                                                 lilv_node_as_uri(lilv_plugin_get_uri(plug)),
+                                                 lilv_node_as_uri(lilv_ui_get_uri(ui)),
+                                                 LV2_UI__GtkUI,
+                                                 bundle_path,
+                                                 binary_path,
+                                                 features);
+
+    serd_free((void *) bundle_path);
+    serd_free((void *) binary_path);
+#endif
+    auto *instance = new NativeInstance();
+    return instance;
 }
 
-bool LV2::UI::Manager::createUIHostInstanceFor(const LV2::Plugin::Description &desc)
+LV2::UI::Instance *LV2::UI::Manager::createUIHostInstanceFor(const LV2::Plugin::Description &desc)
 {
     qDebug("create UIHost UI instance for %s using ", desc.name.toStdString().c_str());
     int err = 0;
@@ -48,7 +118,7 @@ bool LV2::UI::Manager::createUIHostInstanceFor(const LV2::Plugin::Description &d
         err = errno;
         perror("pipe appToHost");
         qDebug("appToHost pipe error: %i\n", err);
-        return false;
+        return nullptr;
     }
 
     int hostToAppFDS[2];
@@ -57,7 +127,7 @@ bool LV2::UI::Manager::createUIHostInstanceFor(const LV2::Plugin::Description &d
         err = errno;
         perror("pipe hostToApp");
         qDebug("hostToApp pipe error: %i\n", err);
-        return false;
+        return nullptr;
     }
 
     pid_t pid = fork();
@@ -79,90 +149,109 @@ bool LV2::UI::Manager::createUIHostInstanceFor(const LV2::Plugin::Description &d
             err = errno;
             perror("execv");
             qDebug("execv error: %i\n", err);
-            return false;
+            return nullptr;
         }
     }
     close(appToHostFDS[0]);
     close(hostToAppFDS[1]);
     qDebug("child process pid %i", pid);
 
-    auto instance = LV2::UI::Instance();
-    instance.desc = desc;
-    instance.uuid = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces);
-    instance._pid = pid;
-    instance.fromHostFd = hostToAppFDS[0];
-    instance.toHostFd = appToHostFDS[1];
+    auto instance = new LV2::UI::ForeignInstance();
+    instance->_pid = pid;
+    instance->fromHostFd = hostToAppFDS[0];
+    instance->toHostFd = appToHostFDS[1];
 
-    instance.notifier = new QSocketNotifier(instance.fromHostFd, QSocketNotifier::Read);
-    connect(instance.notifier, &QSocketNotifier::activated, this, &LV2::UI::Manager::activated);
-    _instances.append(instance);
-
-    return true;
+    instance->notifier = new QSocketNotifier(instance->fromHostFd, QSocketNotifier::Read);
+    connect(instance->notifier, &QSocketNotifier::activated, this, &LV2::UI::Manager::activated);
+    return instance;
 }
 
 bool LV2::UI::Manager::deleteInstance(const QString &uuid)
 {
-    for (auto &instance : _instances) {
-        if (instance.uuid == uuid) {
-            // will be removed from _instances when EOF is received on socket
-            return sendGoodbye(instance);
+    for (auto instance : std::as_const(_instances)) {
+        if (instance->uuid == uuid) {
+            if (instance->type == Instance::Type::Native) {
+                return deleteNativeInstance(dynamic_cast<LV2::UI::NativeInstance *>(instance));
+            } else {
+                // will be removed from _instances when EOF is received on socket
+                return sendGoodbye(dynamic_cast<ForeignInstance *>(instance));
+            }
         }
     }
     return false;
 }
 
+bool LV2::UI::Manager::deleteNativeInstance(LV2::UI::NativeInstance *instance)
+{
+    bool ret = _instances.removeIf([&instance](const auto &r) { return r->uuid == instance->uuid; })
+               == 1;
+
+    emit instancesChanged();
+    return ret;
+}
+
 void LV2::UI::Manager::cleanup()
 {
     qDebug("UI::Manager::cleanup");
-    for (auto &instance : _instances) {
-        sendGoodbye(instance);
+    for (auto instance : std::as_const(_instances)) {
+        if (instance->type == Instance::Type::Native) {
+            deleteNativeInstance(dynamic_cast<LV2::UI::NativeInstance *>(instance));
+        } else {
+            sendGoodbye(dynamic_cast<ForeignInstance *>(instance));
+        }
     }
 }
 
 void LV2::UI::Manager::activated(QSocketDescriptor socket, QSocketNotifier::Type type)
 {
-    for (auto &instance : _instances) {
-        if (instance.fromHostFd == (int) socket) {
+    for (auto theInstance : std::as_const(_instances)) {
+        if (theInstance->type != Instance::Type::Foreign) {
+            continue;
+        }
+        auto *instance = dynamic_cast<ForeignInstance *>(theInstance);
+        if (instance->fromHostFd == (int) socket) {
             if (type == QSocketNotifier::Read) {
                 canReadDataFrom(instance);
             } else if (type == QSocketNotifier::Exception) {
-                instance.notifier->disconnect();
+                instance->notifier->disconnect();
             }
             return;
         }
     }
 }
 
-void LV2::UI::Manager::canReadDataFrom(LV2::UI::Instance &instance)
+void LV2::UI::Manager::canReadDataFrom(LV2::UI::ForeignInstance *instance)
 {
     AppHostHeader msgHeader;
-    ssize_t nBytes = read(instance.fromHostFd, &msgHeader, sizeof(AppHostHeader));
+    ssize_t nBytes = read(instance->fromHostFd, &msgHeader, sizeof(AppHostHeader));
     if (nBytes == 0) { // EOF
-        qDebug("socket for %s is EoF", instance.uuid.toStdString().c_str());
-        instance.notifier->disconnect();
+        qDebug("socket for %s is EoF", instance->uuid.toStdString().c_str());
+        instance->notifier->disconnect();
         int removedCount = _instances.removeIf(
-            [&instance](const auto &r) { return r.uuid == instance.uuid; });
-        qDebug("remove %i instances matching %s", removedCount, instance.uuid.toStdString().c_str());
+            [&instance](const auto &r) { return r->uuid == instance->uuid; });
+        qDebug("remove %i instances matching %s",
+               removedCount,
+               instance->uuid.toStdString().c_str());
         emit instancesChanged();
         return;
     }
     if (nBytes == sizeof(AppHostHeader)) {
         char buf[HOST_PROTOCOL_MAX_MSG_SIZE];
-        nBytes = read(instance.fromHostFd, buf, msgHeader.msgSize);
+        nBytes = read(instance->fromHostFd, buf, msgHeader.msgSize);
         if (nBytes == msgHeader.msgSize) {
             onMessageFrom(instance, &msgHeader, (void *) buf);
         }
     }
 }
 
-void LV2::UI::Manager::onMessageFrom(LV2::UI::Instance &instance,
+void LV2::UI::Manager::onMessageFrom(LV2::UI::ForeignInstance *instance,
                                      const AppHostHeader *header,
                                      const void *data)
 {
     switch (header->type) {
     case AppHostMsgType_Hello: {
         const AppHostMsg_Hello *msgHello = (const AppHostMsg_Hello *) data;
-        instance._sentHello = true;
+        instance->_sentHello = true;
         break;
     }
     case AppHostMsgType_URIDMapRequest: {
@@ -172,10 +261,10 @@ void LV2::UI::Manager::onMessageFrom(LV2::UI::Instance &instance,
         AppHostHeader headerReply;
         headerReply.type = AppHostMsgType_URIDMapReply;
         headerReply.msgSize = sizeof(AppHostMsg_URIDMapReply);
-        write(instance.toHostFd, &headerReply, sizeof(AppHostHeader));
+        write(instance->toHostFd, &headerReply, sizeof(AppHostHeader));
         AppHostMsg_URIDMapReply reply;
         reply.urid = urid;
-        write(instance.toHostFd, &reply, sizeof(AppHostMsg_URIDMapReply));
+        write(instance->toHostFd, &reply, sizeof(AppHostMsg_URIDMapReply));
         break;
     }
     case AppHostMsgType_URIDUnMapRequest: {
@@ -184,8 +273,8 @@ void LV2::UI::Manager::onMessageFrom(LV2::UI::Instance &instance,
         AppHostHeader headerReply;
         headerReply.type = AppHostMsgType_URIDUnMapReply;
         headerReply.msgSize = uri.length() + 1;
-        write(instance.toHostFd, &headerReply, sizeof(AppHostHeader));
-        write(instance.toHostFd, uri.toStdString().c_str(), headerReply.msgSize);
+        write(instance->toHostFd, &headerReply, sizeof(AppHostHeader));
+        write(instance->toHostFd, uri.toStdString().c_str(), headerReply.msgSize);
         break;
     }
     case AppHostMsgType_PortWriteRequest: {
@@ -232,14 +321,14 @@ void LV2::UI::Manager::onMessageFrom(LV2::UI::Instance &instance,
     }
 }
 
-bool LV2::UI::Manager::sendGoodbye(LV2::UI::Instance &instance)
+bool LV2::UI::Manager::sendGoodbye(LV2::UI::ForeignInstance *instance)
 {
-    qDebug("send goodbye to %s", instance.uuid.toStdString().c_str());
+    qDebug("send goodbye to %s", instance->uuid.toStdString().c_str());
     AppHostHeader header;
     header.msgSize = sizeof(AppHostMsg_Goodbye);
     header.type = AppHostMsgType_Goodbye;
     AppHostMsg_Goodbye msg;
-    write(instance.toHostFd, &header, sizeof(AppHostHeader));
-    write(instance.toHostFd, &msg, sizeof(AppHostMsg_Goodbye));
+    write(instance->toHostFd, &header, sizeof(AppHostHeader));
+    write(instance->toHostFd, &msg, sizeof(AppHostMsg_Goodbye));
     return true;
 }
